@@ -1,0 +1,90 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+= Transmute-Mode Security (emerging v0.3 layer)
+:doctype: book
+:revnumber: 0.1-draft
+:revdate: 2026-06-16
+:toc: macro
+:toclevels: 3
+:sectnums:
+
+[abstract]
+This document specifies the *security posture indexed by transmute mode* — the
+load-bearing novelty of the cleave engine, and **newer than RC-1..13**. It is
+NOT yet part of the normative ranked-ownership cleave spec; it is a candidate
+v0.3 layer captured here so the design is not lost. Treat every invariant below
+as DRAFT/proposed until reviewed and folded into the spec.
+
+toc::[]
+
+== The thesis
+
+*Integration-degree IS security posture.* How hard you groove — where the zipper sits
+on the staircase — should set, by construction:
+
+[cols="1,3",options="header"]
+|===
+| Knob | Meaning
+| Transaction-gating | which operations require a checkpointed, abortable transaction vs may run ungated.
+| Permissions | the capability set granted at this dial position (a *subset* lattice that widens as you groove harder, narrows as you soften).
+| Preemptability | whether the host may unilaterally reclaim / pause / tear the surface, and on what notice.
+|===
+
+The point is that these three are *not* configured independently and hand-wired per
+integration; they are a **function of the dial reading**, so that softening the groove
+*automatically* tightens gating and raises preemptability, and hardening it does the
+reverse — auditable, monotone, and impossible to desynchronise.
+
+== Why this is the differentiator
+
+Adjacent tech fixes posture *per interface kind*: a sandbox is always-isolated; an FFI
+call is always-direct; an RPC is always-mediated. cleave makes posture a *continuous,
+ordered* property of *one* surface. That is what lets "the same capability, soft AND
+hard" (the demonstrated bar) be a single typed object with two readings rather than two
+separate implementations.
+
+== Draft invariants (TS-*, all PROPOSED)
+
+RFC-2119 keywords; each has a falsifier. None are adopted yet.
+
+[cols="1,4",options="header"]
+|===
+| ID | Statement (DRAFT)
+| `TS-1` Posture is a function of dial position | The (gating, permissions, preemptability) triple MUST be derivable from the zipper's staircase position; it MUST NOT be settable independently of the dial.
+| `TS-2` Monotone permissions | The permission set MUST be monotone in descent depth: dialing harder MAY only widen, dialing softer MAY only narrow. No non-monotone jumps.
+| `TS-3` Gating floor by mode | Each transmute mode MUST declare a minimum transaction-gating floor; operations at that mode MUST NOT run below the floor.
+| `TS-4` Preemptability is dual to permanence | A Soft (lease-expiring) surface MUST be preemptable; a Hard (lease-refreshing) surface MUST honour a declared notice before preemption.
+| `TS-5` Re-dial re-checks posture | A transmute (dialUp/dialDown) MUST re-derive and re-enforce the posture triple atomically; no window may exist where permissions and gating disagree with the new dial position.
+| `TS-6` Posture witnessed, not asserted | The posture triple MUST be a type-level/witnessed attribute of the surface, enforceable at the linear layer — not a runtime comment or convention.
+| `TS-7` No byte-level leakage | The posture witness MUST live at B2 (the membrane), NOT in the C/wire encoding (consistent with the spec's layer-placement rule for ranks).
+|===
+
+== Falsifiers
+
+[cols="1,5",options="header"]
+|===
+| ID | Violated iff ...
+| `TS-1` | a posture knob is set by a path that does not go through the dial.
+| `TS-2` | dialing softer widens (or harder narrows) the permission set.
+| `TS-3` | an operation executes below its mode's gating floor.
+| `TS-4` | a Soft surface resists preemption, or a Hard surface is preempted with no notice.
+| `TS-5` | an observable interval exists where gating/permissions reflect the pre-dial position after a transmute.
+| `TS-6` | posture is enforced only by convention/runtime check, not a witness.
+| `TS-7` | a posture value appears in the wire byte encoding.
+|===
+
+== Open questions
+
+. Is the permission lattice the *same* order as the staircase, or a separate lattice
+  mapped from it? (Cleaner if the same; needs a monotone map either way.)
+. Does `weft` (data-form) need to know the posture at all, or is the B/C decoupling
+  (spec "B perp C") strong enough that the wire layer stays posture-blind? (Lean: blind.)
+. How does this compose with snif's existing SEC-1 (Agda) crash-isolation proof — is
+  snif's posture exactly the "middle detent" reading of TS-1?
+. Relationship to the locked rupture policy (survivor-owns-the-wipe): preemption (TS-4)
+  is a *graceful* reclaim; rupture is not. Where is the boundary?
+
+== Status
+
+DRAFT. Not in the normative spec. Captured 2026-06-16 so it is not lost. Fold into
+`RANKED-OWNERSHIP-CLEAVE.adoc` as a new section only after owner review.

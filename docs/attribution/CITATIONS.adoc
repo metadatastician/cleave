@@ -1,0 +1,37 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+= Cleave - Citation Guide
+:toc:
+
+== BibTeX
+
+[source,bibtex]
+----
+@software{Cleave_2026,
+  author = {Jewell, Jonathan D.A.},
+  title = {Cleave},
+  year = {2026},
+  url = {https://github.com/hyperpolymath/Cleave},
+  license = {MPL-2.0}
+}
+----
+
+== Harvard Style
+
+Jewell, J. (2026) _Cleave_ [Computer software]. Available at: https://github.com/hyperpolymath/Cleave
+
+== OSCOLA
+
+Jonathan D.A. Jewell, 'Cleave' (2026) <https://github.com/hyperpolymath/Cleave>
+
+== MLA
+
+Jewell, Jonathan D.A. "Cleave." 2026, github.com/hyperpolymath/Cleave.
+
+== APA 7
+
+Jewell, J. (2026). _Cleave_ [Computer software]. GitHub. https://github.com/hyperpolymath/Cleave
+
+== See Also
+
+* link:CITATION.cff[CITATION.cff]

@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: MPL-2.0
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+#
+# ECOSYSTEM.a2ml — Ecosystem position
+
+[metadata]
+project = "cleave"
+ecosystem = "hyperpolymath"
+
+[position]
+type = "library"
+purpose = "The interface-engine. A transmutable integration surface, dialable across a spectrum with no hard cap at either end: one end approximates raw FFI-ABI (direct/fast); the middle approximates SNIF (sandboxed isolation); the far end approximates a tight Groove-defined unified protocol that feels like an internal API call. Closeable to a standalone secure surface. Backed by a well-founded, self-dual, zero-residue teardown discipline (the ranked-ownership cleave)."
+
+[pipeline]
+position = "foundation"
+chain = "cleave <- groove <- {gossamer, panll, burble} (consumers)"
+notes = "cleave is the LIBRARY that groove DEPENDS ON. It is NOT a design source other repos copy from (that copy/sync seam is what stalled protocol-squisher). Experimental-vs-stable is a maturity axis INSIDE this one library, not separate repos."
+
+[related-projects]
+projects = [
+  { name = "groove", relationship = "primary-dependent", notes = "The protocol layer. Depends on cleave's stable surface for capability discovery + typed negotiation (Soft/Hard modes map onto cleave dial positions)." },
+  { name = "weft", relationship = "sibling", notes = "The data-form / wire layer. Independent of cleave; consumed by groove alongside cleave. Aligns to Bebop (control) + WebRTC (media)." },
+  { name = "snifs", relationship = "realizes-one-point", notes = "snif (safer NIF: native -> WASM -> wasmtime sandbox) is ONE realized detent on the cleave dial — the safe 'middle'. snif IS-NOT 'the cleave'. Keep snif deniability proofs as cleave-obligation instances." },
+  { name = "gossamer", relationship = "downstream-consumer", notes = "General webview / Tauri-replacement shell. Currently holds drifted groove/cleave semantics; de-conflation rehomes the spec + generic proofs here and rewires gossamer as a CONSUMER (imports the protocol, does not define it)." },
+  { name = "echo-types", relationship = "proof-reuse-upstream", notes = "Reuse Ordinal/CNF + RankPow for omega.n / omega^k ranks (monotone embedding) when RC-11 permits ordinal machinery." },
+  { name = "tropical-resource-typing", relationship = "proof-reuse-upstream", notes = "Reuse EchoBridge / MinPlus: infinity = infeasible = bottom; residue->0 = grade->identity." },
+  { name = "ephapax", relationship = "proof-mirror", notes = "Mirror Region.idr RegionStack for the order-dual stack discipline." },
+  { name = "standards", relationship = "spec-registry", notes = "PORT-REGISTRY (groove broker port) and the ranked-ownership cleave spec (issue #386). Canonical home of the spec is now THIS repo: docs/standards/RANKED-OWNERSHIP-CLEAVE.adoc." },
+]

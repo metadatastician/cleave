@@ -1,0 +1,141 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+= Cleave Engine — Design (the transmutable dial)
+:doctype: book
+:revnumber: 0.1-draft
+:revdate: 2026-06-16
+:toc: macro
+:toclevels: 3
+:sectnums:
+
+[abstract]
+This is the engine-design companion to the normative
+`docs/standards/RANKED-OWNERSHIP-CLEAVE.adoc`. The spec defines the *B2
+lifecycle/residue* discipline (RC-1..13). This document defines the **public
+engine surface**: the transmutable dial, the WF/OF staircase, the zipper, and
+soft/hard groove. It is design intent, not yet implementation — see
+`docs/PROOF-NEEDS.adoc` for the obligations and honest gaps.
+
+toc::[]
+
+== One paragraph
+
+`cleave` exposes *one* interface surface whose character is a **dial position**, not
+a fixed kind. The same surface can present as a direct FFI-ABI call, a sandboxed
+SNIF, or a unified Groove protocol — and can be re-dialed without being torn down and
+rebuilt as a different thing. The dial is implemented as a **zipper walking a
+well-founded staircase of ordered connection-steps**; how far down you walk *is* how
+hard you groove.
+
+== The dial — one surface, no hard caps
+
+[%hardbreaks]
+*FFI-ABI end* — direct, fast, minimal mediation. Interoperable, not isolated.
+*SNIF middle* — native -> WASM -> wasmtime sandbox; a guest trap becomes `{:error,_}`,
+the host survives. (Realized today in the `snifs` repo — *one detent*, not the dial.)
+*Groove far end* — a tight, typed, negotiated unified protocol that feels like an
+internal API call.
+*Closed* — a standalone secure surface.
+
+There is **no hard cap at either end**: the FFI end can be made tighter, the protocol
+end can be made richer. Experimental-vs-stable is a *maturity axis inside this one
+library*, never a fork into separate repos.
+
+== The WF/OF staircase
+
+The dial position is a point on a **staircase of ordered connection-steps**, each step
+a *tree of connections*. Two assumptions are carried in the types:
+
+[cols="1,4",options="header"]
+|===
+| Assumption | Meaning
+| *WF* (well-foundedness) | The staircase has a bottom `perp`; there is no infinite descent. Every descent terminates. (This is what makes graceful teardown a theorem — see spec `gracefulTeardownTerminates`.)
+| *OF* (ordinal fidelity) | Each step's *loss* is ordinal-graded — *known*, not silent. Moving between steps records what is given up, rather than dropping it on the floor.
+|===
+
+== Degree of grooving = descent depth
+
+[cols="1,2,2",options="header"]
+|===
+| | Soft groove | Hard groove
+| Descent | sparse *order-respecting subset* (e.g. steps 1.3.4.5) | order retained, descend (near) to `perp`
+| Scope | session-scoped, plugin-like (drop-in / tear-out) | docked, in-process, total interface
+| Lease | *Soft-expires* (-> zero-residue wipe) | *Hard-refreshes* on heartbeat/activity
+| Spec tie | occupancy measure expiry (RC-6) | occupancy measure renewal (RC-6)
+|===
+
+"Order-respecting subset" is the precise content of *soft*: you may skip steps, but you
+may not reorder them — the partial order of the staircase is preserved.
+
+== The zipper (transmute)
+
+Transmuting is moving a **zipper** up or down the staircase:
+
+[source]
+----
+type Step          -- a tree of connections at one staircase level
+type Staircase     -- well-founded (WF): ordered Steps with bottom = perp
+type Zipper        -- focus + path back up the staircase
+
+dialDown : Zipper -> Step -> Zipper   -- groove harder (descend; OF records loss)
+dialUp   : Zipper -> Zipper           -- groove softer (ascend)
+focus    : Zipper -> Step
+----
+
+`dialDown` is the *constructing/linking* direction; its dual discharges (see below).
+
+== Self-dual: construct == clean separation
+
+The same order, walked the *other* way, **discharges**. `connect` mints a surface;
+`disconnect` *linearly consumes* it; graceful teardown walks children-before-parent
+(spec RC-8) down to `perp`, where `perp` *is* the zero-residue state. Join is identical
+to clean separation — the construction/consumption duality of linear types.
+
+[source]
+----
+connect    : Staircase -> CleaveSurface          -- mint (constructs down the order)
+disconnect : CleaveSurface -o ()                 -- linear consume (discharges up the dual)
+                                                 --   reaches perp => residue = 0  (graceful)
+----
+
+Rupture (kill / power loss, when `disconnect` never runs) is *out of scope* for this
+surface and is delegated to **survivor-owns-the-wipe** (spec RC-10/RC-13).
+
+== Linear handle (not bare I64)
+
+Handles are an **exactly-once linear newtype**, enforced at the linear binder (`let!`).
+A bare integer handle degrades *use-exactly-once* to *use-at-least-once* (no
+double-revoke protection); the audit found this as a concrete defect. See
+`docs/PROOF-NEEDS.adoc` gap 3.
+
+[source]
+----
+-- WRONG (today's gossamer shape): non-linear, double-revocable
+-- handle : I64
+
+-- RIGHT: linear newtype, consumed exactly once
+type Handle                    -- opaque, linear
+withHandle : Handle -o (Handle -o r) -> r
+----
+
+== Two measures (from the spec)
+
+* *Occupancy* (down on connect): renewable lease bounding quiet infinite occupancy.
+  Hard refreshes; Soft lets expire. (RC-6)
+* *Discharge* (up on release): remaining-teardown-obligation measure descending to
+  `perp`; every clean step strictly decreases it. (RC-7)
+
+These are duals, not one measure viewed twice.
+
+== Security is a dial reading
+
+How hard you groove sets transaction-gating, permissions, and preemptability:
+*integration-degree = security posture*. This is the load-bearing novelty and is newer
+than RC-1..13 — specified separately in `docs/architecture/TRANSMUTE-SECURITY.adoc`.
+
+== Non-goals (this document)
+
+* Wire/byte encoding — that is `weft` (data-form) and the C-plane; the rank/lifecycle
+  witness MUST NOT appear in the byte encoding (spec "Layer placement").
+* The protocol handshake and capability negotiation — that is `groove`.
+* Non-graceful teardown coverage — survivor-owns-the-wipe.

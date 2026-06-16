@@ -1,0 +1,343 @@
+= Ranked-Ownership Cleave (Groove B-layer cleave standard)
+:doctype: book
+:revnumber: 0.2-draft
+:revdate: 2026-06-15
+:revremark: Groove standard — clean-cleave no-residue discipline (corrected + extended from v0.1)
+:keywords: groove, cleave, well-foundedness, ownership, residue, session-types, linear, affine
+:toc: macro
+:toclevels: 3
+:sectnums:
+:sectnumlevels: 3
+:icons: font
+
+[abstract]
+This document specifies the *ranked-ownership cleave*: the discipline by which a
+Groove connection closes cleanly and provably leaves no residue. It is normative
+for the Groove lifecycle (B / membrane) layer of the cleave surface. Its canonical home is this repo (`cleave/docs/standards/`); it was rehomed here
+from `~/developer/dev-notes/2026-06-15-groove-ranked-ownership-cleave-spec.adoc`
+on 2026-06-16 when cleave was differentiated out of the gossamer/groove tangle.
+standards#386 tracks adoption; the audit of 2026-06-15 found `standards` had NO
+canonical Groove spec — only a browser-harness template.
+
+NOTE: This is v0.2-draft. v0.1 was drafted in-session by a sibling model. This
+version applies three corrections and adds three invariants, all flagged in the
+changelog below. Provenance + rationale: `2026-06-15-gossamer-cleave-surface-session-handoff.adoc`.
+
+toc::[]
+
+== Changelog from v0.1 (read this first)
+
+[cols="1,4",options="header"]
+|===
+| Change | Detail
+
+| *C1 — proof host corrected (VERIFIED)*
+| v0.1 named `GrooveTermination.idr` as "the termination proof this discipline
+  names." Empirically wrong (verified by build-grounding run 2026-06-15):
+  `GrooveTermination.idr` is *trace-based bounded-length* termination of the
+  **connect handshake** (≤4 steps, no measure). The connect *ranking function*
+  is `handshakeRank`/`transitionDecreases` in `Groove.idr:503–527` (flat `Nat`,
+  connect-side, a DAG). The *teardown / residue→0* proof this discipline extends
+  is **`ResourceCleanup.idr`** — LIFO structural recursion on a list, i.e. an
+  *implicit flat-`Nat` (length) measure, NOT an ordinal*. The ordinal rank
+  attaches **there**.
+
+| *C2 — `owns` is LINEAR, not affine*
+| v0.1 called an owning edge "an affine resource (used once, must be
+  discharged)." Affine = *at most* once (droppable). "Must be discharged" =
+  *exactly* once = **linear**. Corrected throughout; see the edge-class →
+  substructural → ephapax-binder table in §"Edge classification".
+
+| *C3 — vacuity guard added*
+| Today grooves are a flat 32-slot array (`main.zig`) / 10 targets
+  (`groove.zig`); there is NO `owns` graph. `RC-2`/`RC-3` are therefore
+  *vacuously satisfied*. A green checker today is not a real guarantee — these
+  go load-bearing only once Hard-owns-Soft subtrees exist.
+
+| *A1 — `RC-12` dangling-borrow*
+| The "dual residue" (a `borrow` outliving its owner) was named in prose but had
+  no falsifiable invariant. Added.
+
+| *A2 — `RC-6` amended: occupancy is a renewable lease*
+| v0.1's "descends toward a floor at which it must yield" reaps live-but-idle
+  connections and conflicts with `HardGroove` (persistent). Occupancy is now a
+  *lease*: `SoftGroove` lets it expire (→ zero-residue wipe); `HardGroove`
+  *refreshes* it on heartbeat/activity. Ties to the typed `ttl`+`groove_type`
+  pair already in `gossamer_groove_connect_typed`.
+
+| *A3 — `RC-13` clean-XOR-rupture boundary (lost-ack seam)*
+| Joint completion (`RC-9`) over an unreliable channel is the two-generals
+  problem. Added an invariant defining that a lost *final* ack is either a
+  bounded retransmit (still clean-cleave) or escalates to rupture
+  (survivor-owns-the-wipe) — nothing falls between the two rules.
+|===
+
+== What this is, in one paragraph
+
+A connection that closes badly leaves _residue_: leaked memory, orphaned
+sub-connections, half-open sockets. We want to *prove* that a clean close leaves
+nothing. The mechanism is to give every ownership relationship a *rank* — a
+measure that must strictly decrease as you move from an owner to the thing it
+owns — and to define a clean close as walking those ranks down to the bottom.
+Because the ranks live in a _well-founded_ order (no infinite descent), that
+walk-down is guaranteed to finish, and finishing is exactly the statement that no
+owned residue remains. This proves the *graceful, mutually-completed* case only;
+non-graceful teardown (kill, power loss) is delegated to the separate
+*survivor-owns-the-wipe* rupture rule.
+
+== The cleave surface, and where this sits
+
+The cleave surface (the boundary that simultaneously joins and cleanly separates)
+is layered:
+
+[%hardbreaks]
+*A*  — discovery / negotiation (ends at "connected")
+*B1* — admissibility: can we cleave at all? (compatibility, `IsSubset` offered⊇required)
+*B2* — live governance + *lifecycle/residue*  ← *this document*
+*C1* — logical schema (typed, encoding-agnostic)
+*C2* — framing / transport (per-plane: control = reliable/ordered, media = lossy/low-latency)
+
+Directionality is a cross-cutting typed attribute, not a layer member. The cleave
+is *self-dual*: the typed structure that joins is the same one that cleanly
+separates (construction/consumption duality of linear types). This document is the
+**B2-lifecycle / self-dual-cleave** normative artifact. It deliberately says
+nothing about A, B1-compatibility, or C.
+
+== Two well-founded measures, not one
+
+The intuition "count down on connect, count up on release" is *two* measures
+doing two jobs; both belong in the standard.
+
+Occupancy measure (down on connect)::
+A well-founded measure that descends while the connection is live. It is the
+lease / TTL elevated to a rank. Bounds *quiet infinite occupancy*. It is
+*renewable* (see `RC-6`): `HardGroove` refreshes it; `SoftGroove` lets it expire.
+
+Discharge measure (up on release)::
+A well-founded measure of *remaining teardown obligation* that descends to `⊥`
+as the close proceeds. Bounds *non-terminating teardown*: every clean-cleave step
+strictly reduces remaining obligation, so by well-foundedness the close reaches
+`⊥` in finitely many steps, and `⊥` *is* the zero-residue state for that subtree.
+
+[IMPORTANT]
+====
+These are duals, not one measure viewed twice. Occupancy bounds how long a *live*
+connection may persist; discharge bounds how long a *closing* connection may take.
+Conflating them hides one of the two failure modes.
+====
+
+== Ownership, and why cycles cannot leak
+
+The cycle guarantee comes from well-foundedness of the *`owns` relation itself*,
+NOT from the discharge measure (which only gives termination). Impose: for every
+owning edge `parent → child`, `rank(child) < rank(parent)`. Then a cycle
+`a owns b owns a` would require `rank(a) < rank(b) < rank(a)` — impossible; a
+cycle is an infinite descending chain, which a well-founded order forbids. So
+ownership cycles (refcounting's classic leak) become *unrepresentable*. This is a
+property you *impose on the ownership relation*, not a free gift of having a
+termination measure.
+
+[NOTE]
+====
+This is the *cross-handle* property that per-handle linearity
+(`HandleLinearity.idr`, exactly-once per handle) structurally cannot see. It is
+what underwrites Gossamer's no-GC / no-refcount claim. *Caveat (C3):* vacuously
+true today — no groove-owns-groove graph exists yet.
+====
+
+== Edge classification is the actual proof obligation
+
+A connection graph contains more than ownership. Peers talk, observers watch,
+borrowers hold a temporary non-owning reference. *These may cycle, and that is
+fine* — they carry no release obligation. Classify every edge; only `owns` enters
+the residue proof:
+
+[cols="1,2,1,1,1",options="header"]
+|===
+| Class | Meaning | Discharge duty | Substructural mode | Ephapax binder
+
+| `owns`
+| I must release this before I am released
+| *exactly once* — must discharge
+| *linear*
+| `let!`
+
+| `borrow`
+| temporary non-owning ref; must not outlive owner
+| at most once (droppable)
+| affine
+| `let`
+
+| `observe` / `peer`
+| duplicable observation; free, may cycle
+| none
+| unrestricted
+| `let` (copy)
+|===
+
+Only the `owns` sub-relation enters the no-residue proof. *Soundness of the entire
+argument reduces to the classification being correct* — an owning edge mis-tagged
+`borrow` reintroduces the leak; a `borrow` that outlives its owner is the dual
+residue (a dangling observer, see `RC-12`). The classification is itself a proof
+obligation enforced at the linear/affine layer (`RC-5`), not a comment.
+
+== Fidelity is to the partial order, not LIFO
+
+LIFO is true only for a linear acquisition *stack*. The general structure is a
+tree (or DAG); the correct, weaker requirement is *children-before-parent*:
+
+[cols="1,2",options="header"]
+|===
+| Ownership shape | Required release order
+| Linear stack | LIFO (reverse acquisition) — the degenerate case
+| Tree | Postorder (children before parent)
+| DAG | Reverse-topological
+|===
+
+For arbitrary finite branching, termination follows from a Dershowitz–Manna
+*multiset* measure (replace a node by the finite multiset of its children; this
+strictly decreases in the multiset order). *No ordinal machinery is needed for any
+finite tree.*
+
+[source]
+----
+            connect: assign owning ranks, strictly decreasing downward
+    Hard groove                              rank r0
+        ├─ Soft sub-groove A     owns         rank r1 < r0
+        │     └─ channel         owns         rank r2 < r1
+        └─ Soft sub-groove B     owns         rank r3 < r0
+        ·  ·  · peer ──────────────────────── (non-owning; may cycle)
+
+    clean-cleave: discharge each owned child before its parent
+                  every step the remaining-obligation measure ↓
+                  well-founded ⇒ reaches ⊥ in finitely many steps
+                  ⊥ ⇒ residue = 0  for this subtree
+    joint completion: BOTH peers reach ⊥ and acknowledge (RC-9)
+    rupture (kill): descent never runs ⇒ out of scope ⇒ survivor-owns-the-wipe
+----
+
+== When (and only when) you need ordinals
+
+The fork is *when you rank*, not topology exoticness:
+
+[cols="1,2,1",options="header"]
+|===
+| Ranking strategy | Condition | Order needed
+| Dynamic (computed at cleave time) | Any finite tree | `ℕ` / finite multiset
+| Static (assigned at connect) | Subtree depth bounded at connect | Finite ranks
+| Static (assigned at connect) | Subtree of *unbounded* depth grafted *after* the parent's rank is fixed | `ω` (then `ω·n`, `ω^k`)
+|===
+
+Count of children never forces `ω` (max of finitely many finite ranks is finite);
+only *unbounded child rank under a fixed parent* does. `ε₀` and beyond do not
+arise in any realisable topology and MUST NOT appear (`RC-11`).
+
+== Clean-cleave is a two-party event
+
+One side's descent reaching `⊥` does not entail the peer reached `⊥`; that
+asymmetry is the half-open / half-closed connection — real residue with no kill
+involved. Clean-cleave is the *joint* arrival of both peers at `⊥` with dual
+acknowledgement ("my reap is your reap"). Over an unreliable channel this is the
+two-generals problem; `RC-13` defines the boundary where a lost final ack
+escalates to rupture rather than dangling.
+
+== Scope
+
+[%hardbreaks]
+*Proves:* graceful, mutually-completed no-residue.
+*Does not prove:* anything about non-graceful teardown (a `kill -9` never runs the
+descent). That is owned by *survivor-owns-the-wipe* and is out of scope here.
+
+[TIP]
+====
+Slogan: *Well-founded ranks prove graceful, mutually-completed no-residue.
+Rupture policy handles everything else.* Name the theorem
+`gracefulTeardownTerminates`, NOT `residueAlwaysZero`. The real missing lemma is
+*clean-XOR-torn coverage* (`RC-13`).
+====
+
+== Layer placement
+
+The rank is a *lifecycle witness*, not a payload property. It lives in the
+connection's type at B2. The C / wire layer MUST NOT carry ordinal structure in
+the byte encoding — that is a category error.
+
+== Repository grounding (verified 2026-06-15)
+
+[cols="1,3",options="header"]
+|===
+| Artifact | Role
+| `src/interface/abi/ResourceCleanup.idr` | *Host.* LIFO residue→0 proof; flat-`Nat` structural recursion to upgrade to a tree-shaped ranked `CleanupPlan`.
+| `src/interface/abi/Groove.idr:503` | `handshakeRank` — connect-side ranking function (not teardown).
+| `src/interface/abi/GrooveTermination.idr` | Connect-handshake bounded-length (≤4); NOT the teardown proof.
+| `src/interface/abi/HandleLinearity.idr` | Per-handle exactly-once; the cross-handle ownership rank is complementary.
+| `main.zig:1878 gossamer_groove_disconnect_typed` | *Non-conformant today:* flat wipe, bypasses the `ResourceCleanup` descent ⇒ violates `RC-7`/`RC-8`. First conformance task = wire it.
+| `main.zig:1867 ttl_seconds` | Degenerate untyped `u32` countdown ⇒ erased runtime shadow of the typed occupancy rank (`RC-6`).
+| echo-types `Ordinal/CNF`, `RankPow` | Reuse for ω·n / ω^k ranks (monotone embedding) when `RC-11` permits.
+| tropical-resource-typing `EchoBridge`, `MinPlus` | Reuse: ∞ = infeasible = bottom; residue→0 = grade→identity.
+| ephapax `Region.idr` `RegionStack` | Mirror for the order-dual stack discipline.
+|===
+
+== Normative invariants
+
+RFC-2119 keywords. Each has a stable ID, a statement, and a falsifier.
+
+[cols="1,4",options="header"]
+|===
+| ID | Statement
+
+| `RC-1` Rank carriage | Every owning connection edge MUST carry a rank from a well-founded order.
+| `RC-2` Strict ownership descent | For every owning edge `parent → child`, `rank(child) < rank(parent)` MUST hold.
+| `RC-3` Cycle exclusion (derived) | The `owns` relation MUST be acyclic (follows from `RC-2`).
+| `RC-4` Edge classification | Every edge MUST be classified `owns` or non-owning (`peer`/`observe`/`borrow`); only `owns` participates in residue accounting; non-owning MUST NOT carry release obligations and MAY cycle.
+| `RC-5` Classification soundness | An edge controlling a resource's lifetime MUST be classified `owns` and enforced at the *linear* layer (`let!`), not asserted informally.
+| `RC-6` Occupancy lease | Every live connection MUST carry a well-founded, *renewable* occupancy measure. `HardGroove` MUST refresh it on heartbeat/activity; `SoftGroove` MUST let it expire to a zero-residue wipe. It MUST NOT reap a connection still being renewed.
+| `RC-7` Discharge descent | Every clean-cleave step MUST strictly decrease the remaining-obligation (multiset) measure; reaching `⊥` for a subtree MUST entail zero owned residue for that subtree.
+| `RC-8` Partial-order fidelity | Release MUST respect the order-dual of `owns` (every owned child discharged before its parent). LIFO MUST NOT be assumed for trees/DAGs.
+| `RC-9` Joint completion | Clean-cleave MUST be the joint arrival of both peers at `⊥` with dual acknowledgement; one side at `⊥` without the peer's ack MUST be treated as half-closed residue.
+| `RC-10` Scope boundary | These invariants prove graceful, mutually-completed no-residue ONLY; non-graceful teardown MUST be delegated to survivor-owns-the-wipe and MUST NOT be claimed here.
+| `RC-11` Ordinal economy | Ranks MUST use the smallest sufficient order (dynamic → `ℕ`/multiset; static+bounded → finite; ordinals only for static over post-hoc unbounded depth). `ε₀`+ MUST NOT appear.
+| `RC-12` No dangling borrow | A non-owning edge MUST NOT outlive the `owns`-reachable lifetime of its referent.
+| `RC-13` Clean-XOR-rupture | A lost final acknowledgement MUST be resolved as either a bounded retransmit (still clean-cleave) or an escalation to survivor-owns-the-wipe; a close MUST NOT be left indefinitely between `RC-9` and `RC-10`.
+|===
+
+== Falsifier table (machine readers)
+
+[cols="1,5",options="header"]
+|===
+| ID | Violated iff …
+| `RC-1` | an owning edge has rank absent or from a non-well-founded order.
+| `RC-2` | an owning edge has `rank(child) ≥ rank(parent)`.
+| `RC-3` | the `owns` relation contains a cycle.
+| `RC-4` | an edge is neither `owns` nor a named non-owning class.
+| `RC-5` | a resource's lifetime is controlled by an edge not classified `owns`, or `owns` is enforced outside the linear layer.
+| `RC-6` | a live connection lacks a renewable occupancy measure; or a `HardGroove` is reaped while being renewed; or a `SoftGroove`'s expiry leaves residue.
+| `RC-7` | a clean-cleave step does not strictly decrease the measure, or a subtree reaches `⊥` with owned residue present.
+| `RC-8` | a parent is discharged while an owned child remains undischarged.
+| `RC-9` | a connection is reported clean-cleaved while either peer has not acknowledged `⊥`.
+| `RC-10`| a non-graceful teardown is claimed clean here rather than delegated.
+| `RC-11`| a rank uses an order strictly larger than the smallest sufficient one.
+| `RC-12`| a non-owning edge is observed after its referent's owning lifetime has ended.
+| `RC-13`| a close remains unresolved (neither retransmitted nor escalated) after a lost final ack.
+|===
+
+== Glossary
+
+Residue:: Anything an owned subtree leaves behind after close. Target: zero on clean-cleave.
+Well-founded order:: An order with no infinite descending chain.
+Rank:: A measure on an owning edge / connection, from a well-founded order.
+`owns` edge:: Linear (`let!`), exactly-once, must discharge; strictly rank-decreasing.
+`borrow` edge:: Affine (`let`), non-owning, must not outlive owner.
+`observe`/`peer` edge:: Unrestricted, duplicable, may cycle.
+Occupancy measure:: Renewable lease; descends while live; bounds quiet occupancy.
+Discharge measure:: Descends as a close proceeds; `⊥` = no residue.
+Clean-cleave:: Graceful, mutually-completed close; both peers reach `⊥`.
+Rupture:: Non-graceful close; out of scope; survivor-owns-the-wipe.
+`⊥`:: Order minimum — zero remaining obligation / fully reaped.
+
+== See also
+
+* `ResourceCleanup.idr` — the teardown/residue proof this discipline extends (corrected host; not `GrooveTermination.idr`).
+* Survivor-owns-the-wipe rupture rule — the complementary non-graceful path (`RC-10`, `RC-13`).
+* Linear-layer (`let!`) access-site emission — enforcement point for `RC-4`/`RC-5`.
+* Session handoff: `2026-06-15-gossamer-cleave-surface-session-handoff.adoc`.

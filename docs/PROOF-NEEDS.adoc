@@ -1,0 +1,98 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+= Cleave — PROOF-NEEDS
+:doctype: book
+:revdate: 2026-06-16
+:toc: macro
+:toclevels: 2
+:sectnums:
+
+[abstract]
+The proof obligations the cleave library must discharge, and the *honest gaps*
+between the current state (proofs in gossamer, partly phantom/unwired) and a real
+interface engine. This is the truth-ledger; nothing here is claimed done. Sources:
+`docs/standards/RANKED-OWNERSHIP-CLEAVE.adoc`, the 2026-06-15 gossamer cleave-surface
+audit, and the session handoff.
+
+toc::[]
+
+== Obligations (what a real cleave proves)
+
+[cols="1,4",options="header"]
+|===
+| Obligation | Statement
+| `O-1` Graceful teardown terminates | `gracefulTeardownTerminates`: a graceful, mutually-completed close reaches `perp` in finitely many steps (well-foundedness of the discharge measure). NOT `residueAlwaysZero`.
+| `O-2` No owned residue at perp | Reaching `perp` for a subtree entails zero owned residue for that subtree (RC-7).
+| `O-3` Ownership acyclic | The `owns` relation is well-founded, so ownership cycles (refcounting's classic leak) are unrepresentable (RC-2/RC-3). This is the cross-handle property per-handle linearity cannot see.
+| `O-4` Partial-order fidelity | Release respects the order-dual of `owns` (children before parent); LIFO only in the degenerate linear-stack case (RC-8).
+| `O-5` Handle linearity | Every handle is consumed exactly once (linear newtype, `let!`).
+| `O-6` Joint completion | Clean-cleave is both peers at `perp` with dual ack; one-sided is half-closed residue (RC-9).
+| `O-7` Clean-XOR-rupture | A lost final ack resolves as bounded retransmit OR escalation to survivor-owns-the-wipe — never dangling (RC-13).
+| `O-8` Manifest authenticity | Declared capabilities match implementation; capability tokens are unspoofable on the wire.
+| `O-9` Transmute-mode security | (PROPOSED, see TRANSMUTE-SECURITY.adoc) posture triple is a function of dial position, monotone, witnessed (TS-1..7).
+|===
+
+== Honest gaps (current state -> target)
+
+[cols="1,1,4",options="header"]
+|===
+| Gap | Status | What must change
+
+| `G-1` Teardown is flat-LIFO only
+| open
+| `ResourceCleanup.idr` proves residue->0 by *LIFO structural recursion on a list* — an implicit flat-`Nat` (length) measure. The staircase is a *tree*; upgrade to the **tree-ranked Dershowitz-Manna multiset** measure (replace a node by the finite multiset of its children; strictly decreases in the multiset order). No ordinal machinery needed for any finite tree.
+
+| `G-2` ResourceCleanup is unwired
+| open
+| The proof exists but real disconnect (`gossamer_groove_disconnect_typed`, main.zig:1878) is a **flat wipe** that bypasses the descent -> violates RC-7/RC-8. Wire the descent to the real teardown so the proof guards running code.
+
+| `G-3` Handles are bare I64 (non-linear)
+| open
+| ephapax's own `is_linear()` makes a `let!` on a bare-`I64` handle degrade *use-exactly-once* -> *use-at-least-once* (no double-revoke protection). Make handles a **linear newtype**. (Also: `__ffi` returns `I64` but wrappers declared `: I32` -> typecheck failure.)
+
+| `G-4` RC-1..13 are vacuously green
+| open
+| There is no `owns`-graph today (flat 32-slot array / 10 targets). RC-2/RC-3 are *vacuously satisfied*; a green checker proves nothing yet. They go load-bearing only once a real Hard-owns-Soft subtree exists. Build the owns-tree first, then the invariants bite.
+
+| `G-5` Manifests unsigned/untyped on the wire
+| open
+| Capability spoofing is unmitigated. Make the manifest **typed + signable** at the boundary (ties to `groove` + `weft`). `CapabilityAuthenticity.idr` is the generic host to extend.
+
+| `G-6` Proofs live on a phantom surface
+| open
+| In gossamer the proofs bind a phantom-template ABI (3/12 real `%foreign`), while the *true* cleave (the real Zig symbols) is unspecified. Rehome the **genuinely-generic** proofs + spec here and **rebuild wiring fresh** — do NOT lift the phantom.
+
+| `G-7` Transmute-mode security unspecified in the normative spec
+| open
+| The posture-indexed-by-mode layer (TS-1..7) is newer than RC-1..13 and only drafted. Specify falsifiably, then prove.
+|===
+
+== The bar: feasible -> demonstrated
+
+`snifs` proved **one** wired point on the dial (SEC-1 in Agda, an ABI conformance gate,
+21/21 in-BEAM tests). The cleave library proves the *surface* when a **SECOND point is
+wired end-to-end**:
+
+[%hardbreaks]
+* a *real* capability (not a placeholder),
+* *both* soft AND hard groove,
+* the staircase teardown *actually invoked* (G-2 closed for this path),
+* the linear handle *actually linear* (G-3 closed for this path),
+* the proof *actually guarding running code* (not typecheck-only).
+
+Until that second point is wired, "transmutable surface" is *feasible*, not
+*demonstrated*. State that honestly in every status doc.
+
+== Reuse, don't reinvent
+
+[cols="1,3",options="header"]
+|===
+| Source | Reuse
+| echo-types `Ordinal/CNF`, `RankPow` | omega.n / omega^k ranks (monotone embedding) — only when RC-11 permits ordinals (finite trees do not need them).
+| tropical-resource-typing `EchoBridge`, `MinPlus` | infinity = infeasible = bottom; residue->0 = grade->identity.
+| ephapax `Region.idr` `RegionStack` | order-dual stack discipline.
+| gossamer generic proofs (`HandleLinearity`, `ResourceCleanup`, `CapabilityAuthenticity`) | rehome the generic cores; rebuild wiring.
+|===
+
+NOTE: per estate policy, any echo-typed obligation MUST first audit `hyperpolymath/echo-types`,
+reuse if applicable, extend upstream WITH proofs if not, then cross-document.

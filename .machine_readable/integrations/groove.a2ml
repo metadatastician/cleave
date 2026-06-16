@@ -1,0 +1,40 @@
+; SPDX-License-Identifier: MPL-2.0
+; Groove Protocol Manifest — declares API surfaces this project exposes.
+;
+; cleave is the interface-engine LIBRARY. It does not bind a network port
+; (port 0). It is consumed in-process by groove (and, transitively, by
+; groove's consumers). This manifest declares the engine capabilities groove
+; depends on.
+;
+; See: docs/standards/RANKED-OWNERSHIP-CLEAVE.adoc
+
+(groove-manifest
+  (version "1.0")
+
+  (service "cleave")
+  (service-version "0.1.0")
+
+  ; Library — no network port.
+  (port 0)
+
+  ; cleave exposes an in-process engine surface, not network API surfaces.
+  (api-surfaces
+    (rest    (enabled false))
+    (grpc    (enabled false))
+    (graphql (enabled false))
+    (websocket (enabled false))
+    (sse     (enabled false))
+    (groove  (enabled false)))
+
+  (health "")
+
+  ; Capabilities — the engine surface groove (and others) depend on.
+  (capabilities
+    (cap (id "cleave.transmute")      (name "Transmutable dial")        (desc "Dial a surface across FFI-ABI <-> SNIF <-> unified-protocol via a zipper on the well-founded staircase."))
+    (cap (id "cleave.staircase")      (name "WF/OF staircase")          (desc "Well-founded (bottom = perp) + ordinal-fidelity (graded, known loss) ordered connection-steps."))
+    (cap (id "cleave.linear-handle")  (name "Linear handle")            (desc "Exactly-once linear newtype handle (not bare I64); let! enforced."))
+    (cap (id "cleave.cleave-discharge") (name "Self-dual discharge")    (desc "connect mints; disconnect linearly consumes; graceful teardown reaches perp = zero residue."))
+    (cap (id "cleave.transmute-security") (name "Mode-indexed security") (desc "EMERGING v0.3: transaction-gating + permissions + preemptability indexed by transmute mode (integration-degree = security posture).")))
+
+  ; Dependencies — cleave depends on nothing in-estate (foundation layer).
+  (dependencies ()))

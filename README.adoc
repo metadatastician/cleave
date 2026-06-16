@@ -1,0 +1,83 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+// SPDX-FileCopyrightText: 2024-2026 Jonathan D.A. Jewell (hyperpolymath)
+= Cleave
+:toc:
+:toc-placement: preamble
+
+image:https://img.shields.io/badge/License-MPL_2.0-blue.svg[License: MPL-2.0,link="https://opensource.org/licenses/MPL-2.0"]
+
+The transmutable interface-engine library.
+
+**Status: experimental (design phase).** Spec rehomed; proofs and wiring to follow.
+This repo was differentiated out of the gossamer/groove tangle on 2026-06-16.
+
+---
+
+== What it is
+
+`cleave` is a *transmutable integration surface* — a single interface that you can
+*dial* across a spectrum, with **no hard cap at either end**:
+
+[%hardbreaks]
+* one end approximates raw **FFI-ABI** — direct and fast;
+* the **middle** approximates **SNIF** — native -> WASM -> wasmtime sandbox, crash-isolated;
+* the far end approximates a tight **Groove-defined unified protocol** that feels like an internal API call.
+
+It can be closed down to a **standalone secure surface**. The name is the owner's
+contranym: the surface that simultaneously *joins* (a carpenter's joint, bound by
+fit) and *cleaves apart* (a clean break along the grain) — a semi-permeable membrane.
+
+== The technical heart
+
+* **Zipper on a well-founded staircase.** The cleave transmutes by walking a zipper
+  up/down a staircase of ordered connection-steps, each step a *tree of connections*.
+  Two assumptions are made type-visible: **WF** (well-foundedness — the staircase has
+  a bottom `perp`; descents terminate) and **OF** (ordinal fidelity — each step's loss
+  is ordinal-graded, *known*, not silent).
+* **Degree of grooving = descent depth / order-respecting subset.** *Soft* = a sparse
+  order-respecting subset, session-scoped, plugin-like, lease *expires*. *Hard* = order
+  retained, descend (near) to `perp` = total interface, lease *refreshes*.
+* **Self-dual.** The same order walked one way **constructs/links**; the dual way
+  **discharges/closes** to `perp` = zero residue. Join is identical to clean separation
+  (construction/consumption duality of linear types).
+* **Security indexed by transmute mode.** How hard you groove sets your
+  transaction-gating, permissions, and preemptability: *integration-degree = security
+  posture*. This is the load-bearing novelty (emerging v0.3 layer).
+
+== Where it sits
+
+`cleave` is the **library that `groove` depends on** — not a design source you copy
+from (that copy/sync seam is what stalled `protocol-squisher`). `groove` is the
+protocol; `weft` is the data-form/wire layer; `gossamer`/`panll`/`burble` are
+consumers.
+
+`snif` (in the `snifs` repo) is **one realized point** on the cleave dial — the safe
+"middle detent". snif *is-not* "the cleave".
+
+== Delta vs adjacent tech
+
+The ingredients are known (gRPC/Cap'n Proto for RPC; the WASM Component Model + WASI
+for sandboxed capability interfaces; seL4 capabilities; session types for typed
+protocols; Rust/linear-type ownership for handles). The claim is the **unification**:
+a *continuous dial* from raw FFI to sandboxed to unified-protocol, with **security
+posture indexed by integration depth**, over a **well-founded teardown backbone**. No
+single neighbour does all three.
+
+== Documentation
+
+[cols="1,2"]
+|===
+| Document | What it is
+
+| `docs/standards/RANKED-OWNERSHIP-CLEAVE.adoc` | The normative B2-lifecycle spec (RC-1..13): well-founded ranks, self-dual cleave, zero-residue teardown.
+| `docs/architecture/CLEAVE-ENGINE-DESIGN.adoc` | The transmutable dial, the WF/OF staircase, the zipper, soft/hard groove — the engine API surface.
+| `docs/architecture/TRANSMUTE-SECURITY.adoc` | The emerging v0.3 layer: transaction-gating + mode-permission + preemptability indexed by transmute mode.
+| `docs/PROOF-NEEDS.adoc` | The proof obligations + the honest gaps a real cleave library must close.
+|===
+
+== License
+
+Mozilla Public License, v. 2.0. See `LICENSE`.
+
+SPDX-License-Identifier: MPL-2.0
