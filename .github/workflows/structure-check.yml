@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: MPL-2.0
+# The one real workflow for a design repo: the docs that ARE the repo exist,
+# the README stays honest, and the prune doesn't regress (ADR 0008 in
+# groove-protocol). Everything else in this directory is scheduled for
+# deletion per PRUNE-MANIFEST.md.
+name: structure-check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  structure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash tests/validate_structure.sh

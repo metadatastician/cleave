@@ -7,77 +7,68 @@
 
 image:https://img.shields.io/badge/License-MPL_2.0-blue.svg[License: MPL-2.0,link="https://opensource.org/licenses/MPL-2.0"]
 
-The transmutable interface-engine library.
-
-**Status: experimental (design phase).** Spec rehomed; proofs and wiring to follow.
-This repo was differentiated out of the gossamer/groove tangle on 2026-06-16.
-
----
+The transmutable interface-engine library — a design corpus with an honest
+ledger, on its way to a demonstrable kernel.
 
 == What it is
 
-`cleave` is a *transmutable integration surface* — a single interface that you can
-*dial* across a spectrum, with **no hard cap at either end**:
+`cleave` is a *transmutable integration surface* — one interface you *dial*
+across a spectrum with no hard cap at either end: raw **FFI-ABI**
+(direct/fast) at one end, a sandboxed **SNIF** point (native → WASM →
+wasmtime, crash-isolated) in the middle, a unified-protocol point (feels like
+an internal API call) at the far end. The dial is a *zipper walking a
+well-founded staircase* of connection steps: how far down you walk *is* how
+hard you groove. Two type-visible assumptions carry it — **WF**
+(well-foundedness: the staircase has a bottom `perp`; descents terminate) and
+**OF** (ordinal fidelity: each step's loss is graded and known). `connect`
+mints down the order; `disconnect` linearly consumes up the dual; graceful
+teardown reaches `perp` = zero residue. Ownership edges are *ranked*
+(`rank(child) < rank(parent)`), making ownership cycles unrepresentable
+(invariants RC-1..RC-13). The claimed novelty on top:
+**integration-degree = security posture** — gating, permissions and
+preemptability as a function of dial position (TS-1..TS-7, DRAFT).
 
-[%hardbreaks]
-* one end approximates raw **FFI-ABI** — direct and fast;
-* the **middle** approximates **SNIF** — native -> WASM -> wasmtime sandbox, crash-isolated;
-* the far end approximates a tight **Groove-defined unified protocol** that feels like an internal API call.
+== Status — read this before believing anything
 
-It can be closed down to a **standalone secure surface**. The name is the owner's
-contranym: the surface that simultaneously *joins* (a carpenter's joint, bound by
-fit) and *cleaves apart* (a clean break along the grain) — a semi-permeable membrane.
+*Design corpus. ZERO lines of cleave-specific implementation exist.* 0 of 7
+proofs done. `docs/PROOF-NEEDS.adoc` is the authoritative truth-ledger:
+obligations O-1..O-9 and gaps G-1..G-7, **all open**. Per that ledger's own
+instruction: _"transmutable surface" is feasible, not demonstrated._
 
-== The technical heart
+The `src/` and `tests/` trees currently hold generic RSR-template scaffolding
+(an FFI skeleton differing from the old groove repo's only by symbol prefix);
+they test the template, not cleave, and are scheduled for deletion — see
+`PRUNE-MANIFEST.md` (layout standard: `groove-protocol/docs/REPO-LAYOUT.adoc`,
+ADR 0008).
 
-* **Zipper on a well-founded staircase.** The cleave transmutes by walking a zipper
-  up/down a staircase of ordered connection-steps, each step a *tree of connections*.
-  Two assumptions are made type-visible: **WF** (well-foundedness — the staircase has
-  a bottom `perp`; descents terminate) and **OF** (ordinal fidelity — each step's loss
-  is ordinal-graded, *known*, not silent).
-* **Degree of grooving = descent depth / order-respecting subset.** *Soft* = a sparse
-  order-respecting subset, session-scoped, plugin-like, lease *expires*. *Hard* = order
-  retained, descend (near) to `perp` = total interface, lease *refreshes*.
-* **Self-dual.** The same order walked one way **constructs/links**; the dual way
-  **discharges/closes** to `perp` = zero residue. Join is identical to clean separation
-  (construction/consumption duality of linear types).
-* **Security indexed by transmute mode.** How hard you groove sets your
-  transaction-gating, permissions, and preemptability: *integration-degree = security
-  posture*. This is the load-bearing novelty (emerging v0.3 layer).
+== The real content
 
-== Where it sits
-
-`cleave` is the **library that `groove` depends on** — not a design source you copy
-from (that copy/sync seam is what stalled `protocol-squisher`). `groove` is the
-protocol; `weft` is the data-form/wire layer; `gossamer`/`panll`/`burble` are
-consumers.
-
-`snif` (in the `snifs` repo) is **one realized point** on the cleave dial — the safe
-"middle detent". snif *is-not* "the cleave".
-
-== Delta vs adjacent tech
-
-The ingredients are known (gRPC/Cap'n Proto for RPC; the WASM Component Model + WASI
-for sandboxed capability interfaces; seL4 capabilities; session types for typed
-protocols; Rust/linear-type ownership for handles). The claim is the **unification**:
-a *continuous dial* from raw FFI to sandboxed to unified-protocol, with **security
-posture indexed by integration depth**, over a **well-founded teardown backbone**. No
-single neighbour does all three.
-
-== Documentation
-
-[cols="1,2"]
+[cols="1,3"]
 |===
-| Document | What it is
-
-| `docs/standards/RANKED-OWNERSHIP-CLEAVE.adoc` | The normative B2-lifecycle spec (RC-1..13): well-founded ranks, self-dual cleave, zero-residue teardown.
-| `docs/architecture/CLEAVE-ENGINE-DESIGN.adoc` | The transmutable dial, the WF/OF staircase, the zipper, soft/hard groove — the engine API surface.
-| `docs/architecture/TRANSMUTE-SECURITY.adoc` | The emerging v0.3 layer: transaction-gating + mode-permission + preemptability indexed by transmute mode.
-| `docs/PROOF-NEEDS.adoc` | The proof obligations + the honest gaps a real cleave library must close.
+| `docs/standards/RANKED-OWNERSHIP-CLEAVE.adoc` | RC-1..RC-13 normative invariants + falsifier table (v0.2-draft)
+| `docs/architecture/CLEAVE-ENGINE-DESIGN.adoc` | The dial/zipper/staircase model; soft vs hard groove as descent depth; self-dual teardown
+| `docs/architecture/TRANSMUTE-SECURITY.adoc` | TS-1..TS-7 — integration-degree = security posture (DRAFT, non-normative)
+| `docs/PROOF-NEEDS.adoc` | The honest ledger. Do not edit casually; it is the best artifact in this repo
+| `docs/KERNEL.adoc` | **The next milestone**: the minimal demonstrable kernel — one dial point, linear handles, 2-stage staircase, RC-1/RC-6/RC-13 as executable assertions, acceptance IDs KERN-1..KERN-6
 |===
+
+== Relationship to groove
+
+The Groove protocol lives at
+https://github.com/hyperpolymath/groove-protocol[groove-protocol] and is
+*normatively independent of cleave* (its ADR 0007). The cleave-layered
+formulation of groove (soft/hard as dial positions, lease semantics from
+RC-6) is preserved there as `spec/LAYERING.adoc`, an explicitly aspirational
+annex. Nothing in groove-protocol blocks on this repo; this repo's bar for
+mattering is `docs/KERNEL.adoc`.
+
+== Provenance
+
+Differentiated out of the gossamer/groove tangle on 2026-06-16; the spec was
+rehomed from `~/developer/dev-notes/`. The relocated gossamer proof modules
+are a *phantom surface* (G-6) — they were deliberately not lifted here; the
+kernel's assertions get proofs rebuilt fresh once idris2 is available in CI.
 
 == License
 
 Mozilla Public License, v. 2.0. See `LICENSE`.
-
-SPDX-License-Identifier: MPL-2.0
