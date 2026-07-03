@@ -35,11 +35,14 @@ proofs done. `docs/PROOF-NEEDS.adoc` is the authoritative truth-ledger:
 obligations O-1..O-9 and gaps G-1..G-7, **all open**. Per that ledger's own
 instruction: _"transmutable surface" is feasible, not demonstrated._
 
-The `src/` and `tests/` trees currently hold generic RSR-template scaffolding
-(an FFI skeleton differing from the old groove repo's only by symbol prefix);
-they test the template, not cleave, and are scheduled for deletion — see
-`PRUNE-MANIFEST.md` (layout standard: `groove-protocol/docs/REPO-LAYOUT.adoc`,
-ADR 0008).
+The RSR-template scaffolding (the generic FFI `src/` skeleton, per-directory
+AI manifests, and the 24-workflow governance CI) has been removed; the repo
+now sits at the minimal layout in `groove-protocol/docs/REPO-LAYOUT.adoc`
+(ADR 0008), with a single `structure-check` workflow. The kernel
+implementation restarts `src/` per `docs/KERNEL.adoc`. Some generic estate
+docs still live under `docs/` (governance/, onboarding/, legal/, …) and can
+be curated separately — they were kept rather than deleted because they carry
+real content.
 
 == The real content
 
