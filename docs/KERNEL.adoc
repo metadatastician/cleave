@@ -1,0 +1,99 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+= The Cleave Kernel — minimal demonstrable core
+:toc: macro
+:revdate: 2026-07-02
+
+[abstract]
+This document defines the smallest implementation that moves cleave from
+*feasible* to *demonstrated* by its own bar (`docs/PROOF-NEEDS.adoc`, "The
+bar"): a **second wired dial point** with a real capability, both soft and
+hard groove, staircase teardown actually invoked, a linear handle actually
+linear, and the checks actually guarding running code. Everything here is
+scoped to be buildable in ~300–500 lines of Rust plus tests; the Idris2 proof
+layer is an explicit follow-on.
+
+toc::[]
+
+== Scope: one dial point, two stages, three invariants
+
+The kernel implements exactly:
+
+. **One dial point** — the FFI-adjacent point (direct, in-process), chosen
+  because it needs no sandbox runtime and exercises the same lifecycle
+  machinery every deeper point reuses.
+. **A linear handle** — mint → use → teardown to `perp`; nothing else can
+  happen to it.
+. **A staircase of exactly two stages** — enough to make "release respects
+  the order-dual of construction" observable (O-4) without simulating the
+  full WF/OF ladder.
+. **A ranked `owns` graph** — every edge carries `rank(child) < rank(parent)`.
+. **The minimal invariant subset as executable assertions**:
+  `RC-1` (every `owns` edge is rank-decreasing), `RC-6` (leases: soft
+  *expires*, hard *refreshes*), `RC-13` (graceful teardown drives residue to
+  zero — clean-XOR-rupture in its degenerate, single-process form).
+
+*Why these three of RC-1..13:* against the falsifier table in
+`RANKED-OWNERSHIP-CLEAVE.adoc`, RC-1 kills ownership cycles at the
+representation level (the refcounting classic, O-3), RC-6 is the soft/hard
+distinction — the single most groove-visible behavior — and RC-13 is the
+residue-zero endpoint the whole self-dual teardown story rests on (O-2/O-7).
+The other ten invariants either need multiple processes, a wire, or the full
+staircase, and would turn the kernel into the library.
+
+== Acceptance criteria
+
+Each `KERN-*` is one observable behavior with a test named after it; the
+kernel is done when all six are green in CI.
+
+[cols="1,4,2",options="header"]
+|===
+| ID | Observable behavior | Advances
+| KERN-1 | `mint(parent)` returns a handle whose rank is strictly below its parent's; constructing a rank-violating edge does not compile or panics at construction (assertion RC-1). Ownership cycles are unrepresentable. | O-3, RC-1
+| KERN-2 | A handle is consumed exactly once: `teardown(h)` moves `h` (Rust ownership), so a second teardown *does not compile*; a leaked handle (dropped without teardown) triggers a drop-bomb panic in debug/test builds. | O-5, G-3
+| KERN-3 | Graceful teardown of the root drives *residue to zero*: after `teardown_all`, an audit of the owns-graph reports no live nodes, and this is asserted, not assumed (assertion RC-13). | O-1, O-2, G-1
+| KERN-4 | The two-stage staircase tears down in the order-dual of construction: stage-2 resources release before stage-1, children before parents; the audit log proves the order (assertion, degenerate RC-8/O-4). | O-4, G-2
+| KERN-5 | A **soft** lease expires: absent refresh within its TTL, the resource is wiped and the audit shows a zero-residue expiry. | RC-6 (soft), G-1
+| KERN-6 | A **hard** lease refreshes: with a heartbeat, the lease persists across ≥3 TTL windows; when the heartbeat stops, it degrades to the KERN-5 path. | RC-6 (hard)
+|===
+
+== Implementation recommendation
+
+*Language: Rust.* It is the only toolchain proven in the estate's dev and CI
+environments, and its ownership system gives O-5 (linearity) *at compile
+time* for the common case:
+
+- `#[must_use] pub struct Handle { … }` with a private drop-bomb: `impl Drop`
+  panics (cfg(debug_assertions)) unless the handle was consumed through
+  `teardown(self)`. Double-teardown is unrepresentable (move semantics);
+  leak-without-teardown is a test failure.
+- The owns-graph is an arena (`Vec<Node>` + indices) with ranks assigned at
+  mint; RC-1 is a one-line assertion at edge creation.
+- Leases are `Instant`-based TTLs; soft/hard is a two-variant enum whose
+  behavior difference is exactly KERN-5/KERN-6.
+- No `unsafe`. No external deps beyond std (a test may use `std::thread` +
+  channels for the heartbeat).
+
+*The Idris2 layer is a follow-on*, not part of the kernel: once idris2 is
+available in CI, the kernel's assertions become the runtime mirrors of
+`HandleLinearity`/`ResourceCleanup`-style proofs (currently phantom, G-6 —
+do NOT lift them; rebuild against the kernel's actual types).
+
+== Non-goals (explicitly out)
+
+* No WASM/sandbox stage (that is the *third* dial point).
+* No full RC-1..13; no multi-process clean-cleave (O-6) or wire-level
+  rupture (O-7 beyond the degenerate case).
+* No transmute-security enforcement — TS-1..7 stays DRAFT (G-7, O-9).
+* No manifest signing (G-5, O-8) — that lives with groove-protocol.
+
+== Definition of done
+
+Quoting the bar (`PROOF-NEEDS.adoc`): a second point is wired end-to-end with
+_"a real capability, both soft AND hard groove, the staircase teardown
+actually invoked (G-2 closed for this path), the linear handle actually
+linear (G-3 closed for this path), the proof actually guarding running
+code."_ Concretely: KERN-1..6 green in CI, PROOF-NEEDS updated to mark G-1,
+G-2, G-3 *closed for the kernel path* (and only that), and README's status
+line upgraded from "feasible, not demonstrated" to "demonstrated at one
+kernel point" — no further.
