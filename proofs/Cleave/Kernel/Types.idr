@@ -63,8 +63,10 @@ mutual
           -> RankedForest r cs
           -> RankedForest r (c :: cs)
 
-||| Number of nodes in a tree / forest (the residue measure: live nodes).
+-- Number of nodes in a tree / forest (the residue measure: live nodes).
+-- (Plain comment: a ||| doc comment cannot attach to a `mutual` block.)
 mutual
+  ||| Number of nodes in a tree (the residue measure: live nodes).
   public export
   size : RTree -> Nat
   size (RNode _ _ cs) = S (sizeForest cs)
