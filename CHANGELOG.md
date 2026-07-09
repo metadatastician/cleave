@@ -13,3 +13,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- Run: just changelog -->
 
 ## [Unreleased]
+
+## [0.1.0] - 2026-07-09 — the kernel
+
+### Added
+- **The cleave kernel** (`src/`, per `docs/KERNEL.adoc`): dep-free Rust,
+  `#![forbid(unsafe_code)]` — ranked owns-arena (RC-1 asserted at every edge
+  construction; cycles unrepresentable), linear `Handle` (`#[must_use]`,
+  move-consumed, debug drop-bomb; double-teardown is a compile error),
+  soft/hard leases (RC-6: soft expires to a zero-residue wipe, hard
+  refreshes on heartbeat and degrades after 3 missed windows), postorder
+  teardown to `⊥` with residue-zero asserted (RC-13 degenerate), two-stage
+  dial with posture as a total function of position (TS-1..5 kernel forms).
+- **KERN-1..7 acceptance suite** (`tests/kern.rs`) + `compile_fail` doctest.
+- **Idris2 proof mirrors** (`proofs/Cleave/Kernel/`, `cleave-proofs.ipkg`):
+  `Types` (Ranked tree witness), `HandleLinearity` (multiplicity-1
+  teardown), `DMMultiset` (Dershowitz–Manna step lemma),
+  `ResourceCleanup` (postorder plan: parent-last, complete, terminating,
+  residue-zero at ⊥), `Posture` (totality, monotonicity, preemption
+  duality). Rebuilt fresh per G-6; honesty ledger in `proofs/README.adoc`.
+- **CI** `.github/workflows/kernel.yml`: cargo build/test (debug+release+
+  doctests) and Idris2 typecheck (pinned v0.8.0, cached).
+- `docs/architecture/THE-JOINERY.adoc` — the maths/art/science/engineering
+  orientation doc for the cleave/groove/spline system.
+
+### Changed
+- `docs/standards/RANKED-OWNERSHIP-CLEAVE.adoc` → v0.3-draft: TS-1..TS-7
+  promoted to a normative section with per-invariant enforcement status;
+  `docs/architecture/TRANSMUTE-SECURITY.adoc` now carries the rationale.
+- `docs/PROOF-NEEDS.adoc`: G-1/G-2/G-3 closed **for the kernel path only**;
+  G-5 design adopted (groove ADR 0010) with provider+CLI legs implemented;
+  G-7/O-9 promoted; echo-types audit deferral recorded.
+- `README.adoc` status: "feasible, not demonstrated" → "demonstrated at one
+  kernel point" (and no further), with `tests/validate_structure.sh`
+  updated in lockstep.

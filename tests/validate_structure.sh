@@ -22,7 +22,13 @@ req docs/PROOF-NEEDS.adoc
 req docs/standards/RANKED-OWNERSHIP-CLEAVE.adoc
 req docs/architecture/CLEAVE-ENGINE-DESIGN.adoc
 
-if grep -q "not demonstrated" README.adoc; then
+# The honesty line tracks KERNEL.adoc's definition of done: before the
+# kernel, "feasible, not demonstrated"; after it, "demonstrated at one
+# kernel point" - which still carries "not demonstrated" for the full
+# surface. Either phrasing passes; losing both fails.
+if grep -qi "demonstrated at one kernel point" README.adoc && grep -q "not demonstrated" README.adoc; then
+  echo "PASS: README carries the kernel-scoped honesty line"
+elif grep -q "not demonstrated" README.adoc; then
   echo "PASS: README carries the honesty line (feasible, not demonstrated)"
 else
   echo "FAIL: README lost the honesty line"

@@ -1,0 +1,39 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+= Cleave kernel proofs — what is proven, what is mirrored, what is open
+
+Idris2 mirrors of the Rust kernel (`src/`), rebuilt **fresh against the
+kernel's actual types** per PROOF-NEEDS G-6. Nothing here is lifted from
+gossamer's phantom `Gossamer.ABI.*` surface. Typechecked in CI
+(`.github/workflows/kernel.yml`, job `proofs-typecheck`, Idris2 pinned
+v0.8.0); idris2 is not assumed on dev machines.
+
+== Module map
+
+[cols="1,3"]
+|===
+| `Types.idr` | Inductive mirrors: `RTree` (finite owns-tree), `Ranked`/`RankedForest` — RC-1/RC-2 as a datatype witness (every owning edge rank-decreasing; cycles unrepresentable in a finite rank-decreasing tree, RC-3). Ranks are `Nat` (RC-11: no ordinals for finite trees).
+| `HandleLinearity.idr` | O-5 / G-3 (kernel path): `teardown : (1 h : Handle) -> Perp` — exactly-once consumption enforced by multiplicities; drop and duplicate both fail to typecheck (negative examples kept as comments). Runtime mirror: Rust move semantics + `compile_fail` doctest + debug drop-bomb (KERN-2).
+| `DMMultiset.idr` | The Dershowitz–Manna STEP lemma: `teardownStepDecreasesDM` — releasing a `Ranked` node is a DM step on the rank multiset (children in, parent out, all strictly below; RC-7's strict descent for one step).
+| `ResourceCleanup.idr` | The G-1 upgrade, tree-shaped: postorder `plan` with `planPostorder` + `planParentLast` (children-before-parent, RC-8/O-4), `planComplete` (every node discharged exactly once), `gracefulTeardownTerminates` (named per the spec slogan — NOT `residueAlwaysZero`), `residueZeroAtPerp` (⊥ = zero residue, O-2/RC-7). Runtime mirror: `src/teardown.rs`, KERN-3/KERN-4.
+| `Posture.idr` | TS layer (v0.3): `postureOf` total (TS-1), `permsMonotone` (TS-2), `gatingFloor` (TS-3 degenerate), `softPreemptable`/`hardNoticed` (TS-4). Runtime mirror: `src/staircase.rs`, KERN-7.
+|===
+
+== Honesty ledger (do not overclaim)
+
+* **General DM well-foundedness is NOT proven.** The DM order over
+  Nat-multisets has order type ω^ω; its accessibility proof is genuinely
+  hard and is not needed for the kernel: teardown of a tree *fixed at
+  connect time* terminates by structural totality (`plan` is total), which
+  is the DM argument specialised to that case — exactly the substitution
+  RC-11 anticipates. The general proof remains OPEN (G-1 residual, tracked
+  in `docs/PROOF-NEEDS.adoc`).
+* **Linearity is per-handle** (O-5). The cross-handle ownership property is
+  carried by `Ranked` (RC-2), as the spec requires — two different proofs,
+  not one.
+* **These are mirrors, not extracted code.** The Rust kernel enforces the
+  same properties at runtime (KERN-1..7); nothing machine-connects the two
+  yet. Wiring proof-to-binary is future work and is NOT claimed.
+* **TS-5/TS-7 are not in scope here**: TS-5 (atomic re-dial) is a borrow-
+  discipline property exercised by KERN-7 at runtime; TS-7 (no wire
+  leakage) is vacuous for an in-process kernel and lives in the spec.

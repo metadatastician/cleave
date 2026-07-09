@@ -1,0 +1,89 @@
+# SPDX-License-Identifier: MPL-2.0
+# Cleave Kernel Gate — builds and tests the demonstrable kernel
+# (docs/KERNEL.adoc, KERN-1..7) and typechecks its Idris2 proof mirrors
+# (cleave-proofs.ipkg). The Idris2 recipe is gossamer's abi-typecheck.yml
+# pattern (Chez + pinned Idris2 v0.8.0), path-filtered and cached so it
+# stays off unrelated pushes.
+name: Cleave Kernel Gate
+
+on:
+  pull_request:
+    branches: ['**']
+    paths:
+      - 'src/**'
+      - 'tests/kern.rs'
+      - 'Cargo.toml'
+      - 'rust-toolchain.toml'
+      - 'proofs/**'
+      - 'cleave-proofs.ipkg'
+      - '.github/workflows/kernel.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'tests/kern.rs'
+      - 'Cargo.toml'
+      - 'rust-toolchain.toml'
+      - 'proofs/**'
+      - 'cleave-proofs.ipkg'
+      - '.github/workflows/kernel.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kernel-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  kernel:
+    name: cargo build + KERN-1..7
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Install stable Rust
+        uses: dtolnay/rust-toolchain@4be9e76fd7c4901c61fb841f559994984270fce7 # stable
+      - name: Build (no deps, forbid(unsafe_code))
+        run: cargo build --locked || cargo build
+      - name: KERN acceptance suite (debug — drop-bomb armed)
+        run: cargo test --all-targets
+      - name: Doctests (compile_fail double-teardown)
+        run: cargo test --doc
+      - name: KERN suite (release — bomb compiled out by design)
+        run: cargo test --release
+
+  proofs-typecheck:
+    name: idris2 typecheck (kernel proof mirrors)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: kernel
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Cache Idris2 toolchain
+        id: idris2-cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/.idris2
+          key: idris2-v0.8.0-chezscheme-${{ runner.os }}
+
+      - name: Install Chez Scheme
+        run: sudo apt-get update && sudo apt-get install -y chezscheme
+
+      - name: Build & install Idris2 (pinned v0.8.0)
+        if: steps.idris2-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          git clone --depth 1 --branch v0.8.0 https://github.com/idris-lang/Idris2.git "$RUNNER_TEMP/Idris2"
+          cd "$RUNNER_TEMP/Idris2"
+          make bootstrap SCHEME=chezscheme
+          make install
+
+      - name: Add Idris2 to PATH
+        run: echo "$HOME/.idris2/bin" >> "$GITHUB_PATH"
+
+      - name: Typecheck the kernel proof package
+        run: idris2 --typecheck cleave-proofs.ipkg
