@@ -1,0 +1,146 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+= The Joinery — the maths, the art, the science, and the engineering of cleave
+:revdate: 2026-07-09
+:toc: macro
+:toclevels: 2
+
+[abstract]
+One orientation document for the three-layer connective system —
+`cleave` (the surface), `groove` (the protocol), `spline` (the data-form) —
+and how its consumers seat into it. Everything here cites its canonical
+source; nothing here is normative on its own. Written at the close of the
+2026-07-09 round that produced the kernel.
+
+toc::[]
+
+== The maths
+
+The formal content of cleave is small and sharp, and lives in
+`docs/standards/RANKED-OWNERSHIP-CLEAVE.adoc` (RC-1..13 + TS-1..7, v0.3)
+and `docs/architecture/CLEAVE-ENGINE-DESIGN.adoc`:
+
+. **One surface, dial-positioned.** An integration surface's character —
+  FFI-direct, sandboxed, protocol-mediated — is a *position* on a
+  well-founded staircase of connection-steps, walked by a zipper. Two
+  assumptions ride in the types: *WF* (there is a bottom `⊥`; descents
+  terminate — graceful teardown becomes a theorem, not a hope) and *OF*
+  (each step's loss is graded and known — transmuting never silently drops
+  capability).
+. **Soft/hard = descent depth.** Soft grooving takes a sparse,
+  order-respecting subset of steps and lets its occupancy lease *expire*
+  (zero-residue wipe). Hard grooving descends near `⊥`, docked, its lease
+  *refreshing* on heartbeat (RC-6). One surface, two readings — never two
+  implementations.
+. **Self-duality.** `connect` mints down the order; `disconnect` linearly
+  consumes up the dual; `⊥` *is* the zero-residue state. Join and clean
+  separation are the same typed structure read in opposite directions —
+  the construction/consumption duality of linear types, and the reason
+  `cleave` (the contranym) is the right name.
+. **Ranked ownership kills cycles.** Every owning edge carries
+  `rank(child) < rank(parent)` in a well-founded order, so an ownership
+  cycle would be an infinite descending chain — unrepresentable (RC-1..3).
+  Only `owns` edges enter the residue proof; `borrow`/`observe` edges may
+  cycle freely (RC-4/5). Termination of tree teardown is Dershowitz–Manna:
+  replace a node by the finite multiset of its strictly-lower children.
+  Finite trees need only `ℕ` — RC-11 *forbids* ordinal overkill.
+. **Two-party completion.** One side reaching `⊥` is a half-closed
+  connection, which is residue. Clean-cleave is both peers at `⊥` with
+  dual acknowledgement (RC-9); the lost-final-ack seam is the two-generals
+  problem, resolved as clean-XOR-rupture (RC-13) with rupture delegated to
+  survivor-owns-the-wipe (RC-10).
+. **The novelty: posture = f(dial).** Gating, permissions and
+  preemptability are a *function of dial position* — monotone, atomically
+  re-derived on re-dial, witnessed in types, never on the wire
+  (TS-1..7, normative since v0.3). Adjacent technology fixes posture per
+  interface *kind*; cleave makes it a continuous, ordered property of one
+  surface.
+
+== The art
+
+The naming is load-bearing (groove ADR 0009, registered in
+`standards/CANONICAL-NAMES.adoc`): one metaphor family — joinery.
+`cleave` is the surface and a contranym (to cleave apart: clean,
+zero-residue teardown; to cleave together: deep bond) — the dial from
+separation to union in a single word. `groove` is the channel cut into a
+surface: passive until engaged, guiding without constraining; how deep a
+piece seats is how integrated, trusted and gated the connection is.
+`spline` is the thin strip seated into a groove on both boards to carry
+the join — it presupposes the groove and is the material that passes
+through it. *Consumers are not layers*: gossamer, burble, panll keep
+their own names and metaphors; the substrate is named for function, never
+for its loudest early consumer.
+
+== The science
+
+The discipline that keeps the theory honest:
+
+* **Falsifiers, not vibes.** Every invariant (RC-1..13, TS-1..7) carries a
+  machine-readable "violated iff" clause. A claim without a falsifier is
+  not in the spec.
+* **The truth-ledger.** `docs/PROOF-NEEDS.adoc` states what is proven,
+  what is mirrored, what is open — with scope qualifiers ("closed for the
+  kernel path *only*") that CI and reviewers can hold against the README.
+  The structure-check workflow greps the honesty line.
+* **Executable conformance.** Groove's spec is an executable checklist
+  (CONF-L1/L2 + the L2 lease extension, one test per ID, CI-enforced);
+  cleave's kernel is an acceptance suite (KERN-1..7, names = IDs); the
+  soft/hard evidence run is a script whose failure is an exit code
+  (`groove/examples/soft-hard-lease-demo.sh`), not a paragraph.
+* **The bar.** Cleave is "demonstrated" only where a point is wired
+  end-to-end: real capability, both soft AND hard, descent actually
+  invoked, handle actually linear, proof guarding running code. As of
+  2026-07-09 exactly one point — the kernel — meets it. Saying "one
+  point, no further" is the method.
+
+== The engineering
+
+What runs, where, today:
+
+[cols="1,3"]
+|===
+| cleave kernel | `src/` — dep-free Rust, KERN-1..7 green; Idris2 mirrors typecheck in CI (`cleave-proofs.ipkg`).
+| groove | Reference provider + CLI (Rust, `groove-protocol`): discovery, connect/heartbeat/disconnect/mesh, hash-chained attestations, **lease modes** (SPEC §4.6) and **signed manifests** (SPEC §2.1.5, ADR 0010; Ed25519 over canonical JSON, registry-pinned keys).
+| burble (provider consumer-side) | Working P2P voice + AI bridge; supervised groove provider with canonical generated manifest, leases, attestation chain (estate branch); groove surface at registry port 6473.
+| gossamer (consumer) | Zig FFI + green Idris2 ABI; groove client with session API (`GrooveHandle` newtype, real connect/heartbeat), ordered teardown descent replacing the flat wipe (G-2's named offender), HMAC-SHA256, TLS fail-closed (estate branch).
+| spline | Deliberately seed-only: ADRs 0002–0005 pin "parallelise" (plane multiplexing), Bebop schema ownership (burble's `.bop` canonical, spline owns the alignment), the typed token/handle boundary, and the promotion bar. No `src/` until the bar is met.
+|===
+
+The transmutation story consumers get: a gossamer frame and a burble
+collaborator pair at *any* dial position — discovered sidecar (soft) or
+docked embedded voice (hard) — and the same assembly seats into PanLL, or
+extracts back out to a standalone frame, as a dial movement rather than a
+rebuild. PanLL-side adoption (discovery panel per groove SPEC §8.1,
+AffineScript; dialect/port reconciliation of its frozen-legacy backend) is
+Phase 2; modelling attach/extract as `Surface::adopt` + re-dial on one
+kernel surface is Phase 3.
+
+== The triage (what is ludicrous, what is fabulous, what is necessary)
+
+*Necessary and done this round:* the kernel; drift reconciliation at source
+(burble's dual manifests unified + generated; ports against the registry;
+the two-authority rule in `standards/PORT-REGISTRY.md`); ledger updates in
+lockstep; spline ADRs with spline kept thin.
+
+*Fabulous and done this round:* soft AND hard groove with a real capability
+against the reference provider (evidence script green); TS promotion to
+normative v0.3 with kernel enforcement; signed manifests; the tree-shaped
+teardown proofs.
+
+*Ludicrous — named, loved, deferred:* Bebop live-wired into burble's
+transport (spline's promotion milestone, ADR 0005); PanLL panel-clades
+build-out (gated on the Axiom.jl owner decision); GRV6/IPv6T as spline's
+media framing; ordinal ranks and the general DM accessibility proof
+(RC-11 forbids the former for finite trees; the latter is the G-1
+residual, echo-types audit deferred); Groove v2 fully layered on cleave
+(the LAYERING annex is the *start of a discussion* now that the kernel
+exists — not a commitment); posture-lattice unification (TS open
+question 1); burble's E2EE/PTP-hardware headline numbers.
+
+== Reading order
+
+`groove` ADR 0009 (names) → this file → `CLEAVE-ENGINE-DESIGN.adoc` (the
+dial) → `RANKED-OWNERSHIP-CLEAVE.adoc` v0.3 (the law) → `KERNEL.adoc` +
+`src/` (the demonstration) → `PROOF-NEEDS.adoc` (the truth) →
+`groove/spec/SPEC.adoc` §4.6/§2.1.5 (the wire) → spline ADRs 0002–0005
+(the bytes, when they earn existence).

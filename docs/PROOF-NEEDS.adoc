@@ -29,7 +29,7 @@ toc::[]
 | `O-6` Joint completion | Clean-cleave is both peers at `perp` with dual ack; one-sided is half-closed residue (RC-9).
 | `O-7` Clean-XOR-rupture | A lost final ack resolves as bounded retransmit OR escalation to survivor-owns-the-wipe — never dangling (RC-13).
 | `O-8` Manifest authenticity | Declared capabilities match implementation; capability tokens are unspoofable on the wire.
-| `O-9` Transmute-mode security | (PROPOSED, see TRANSMUTE-SECURITY.adoc) posture triple is a function of dial position, monotone, witnessed (TS-1..7).
+| `O-9` Transmute-mode security | (ADOPTED-FOR-KERNEL 2026-07-09; normative text in RANKED-OWNERSHIP-CLEAVE v0.3 §TS) posture triple is a function of dial position, monotone, witnessed (TS-1..7). Kernel enforcement: KERN-7 + Posture.idr; full-surface proof still open.
 |===
 
 == Honest gaps (current state -> target)
@@ -39,32 +39,32 @@ toc::[]
 | Gap | Status | What must change
 
 | `G-1` Teardown is flat-LIFO only
-| open
-| `ResourceCleanup.idr` proves residue->0 by *LIFO structural recursion on a list* — an implicit flat-`Nat` (length) measure. The staircase is a *tree*; upgrade to the **tree-ranked Dershowitz-Manna multiset** measure (replace a node by the finite multiset of its children; strictly decreases in the multiset order). No ordinal machinery needed for any finite tree.
+| *closed for the kernel path* (2026-07-09); general DM well-foundedness residual open
+| CLOSED (kernel): `proofs/Cleave/Kernel/ResourceCleanup.idr` proves the plan is a *tree postorder* (children-before-parent, `planParentLast`), complete (`planComplete`), terminating (`gracefulTeardownTerminates`) and residue-zero at ⊥; `DMMultiset.idr` proves the step lemma (`teardownStepDecreasesDM`: each release is a Dershowitz-Manna step, all children strictly below). Runtime mirror: `src/teardown.rs`, KERN-3/KERN-4 green. RESIDUAL: the *general* DM accessibility proof (order type ω^ω) is NOT attempted — for a tree fixed at connect time, structural totality IS the specialised DM argument (RC-11's substitution); see `proofs/README.adoc` honesty ledger.
 
 | `G-2` ResourceCleanup is unwired
-| open
-| The proof exists but real disconnect (`gossamer_groove_disconnect_typed`, main.zig:1878) is a **flat wipe** that bypasses the descent -> violates RC-7/RC-8. Wire the descent to the real teardown so the proof guards running code.
+| *fix authored for both paths* (2026-07-09); gossamer leg pending its CI
+| KERNEL PATH CLOSED: the descent is the only teardown path in `src/teardown.rs`/`src/lib.rs` (KERN-4 asserts the order from the audit log). GOSSAMER PATH AUTHORED: `gossamer_groove_disconnect_typed`'s flat wipe replaced by a children-first postorder descent with per-subtree residue-0 assertion + audit ring (gossamer branch `claude/cleave-spline-groove-arch-4zq111`, `main.zig`; hard-groove slots deactivate-retain per `GrooveResidue.idr`). Verified by gossamer CI (`zig build test`), not locally — do not claim closed until that CI is green.
 
 | `G-3` Handles are bare I64 (non-linear)
-| open
-| ephapax's own `is_linear()` makes a `let!` on a bare-`I64` handle degrade *use-exactly-once* -> *use-at-least-once* (no double-revoke protection). Make handles a **linear newtype**. (Also: `__ffi` returns `I64` but wrappers declared `: I32` -> typecheck failure.)
+| *closed for the kernel path* (2026-07-09); gossamer leg authored, pending its CI
+| KERNEL: `src/handle.rs` — `#[must_use]` non-Clone `Handle`, consumed by move in `Surface::teardown` (double-teardown is a compile error, `compile_fail` doctest; leak-without-teardown is a debug drop-bomb, KERN-2); proof mirror `proofs/Cleave/Kernel/HandleLinearity.idr` (`teardown : (1 h : Handle) -> Perp`). GOSSAMER: `GrooveHandle = enum(u64)` newtype + once-guarded session API authored on the same branch (true exactly-once linearity remains the Idris/Ephapax layer's job — stated, not hidden).
 
 | `G-4` RC-1..13 are vacuously green
 | open
 | There is no `owns`-graph today (flat 32-slot array / 10 targets). RC-2/RC-3 are *vacuously satisfied*; a green checker proves nothing yet. They go load-bearing only once a real Hard-owns-Soft subtree exists. Build the owns-tree first, then the invariants bite.
 
 | `G-5` Manifests unsigned/untyped on the wire
-| open
-| Capability spoofing is unmitigated. Make the manifest **typed + signable** at the boundary (ties to `groove` + `weft`). `CapabilityAuthenticity.idr` is the generic host to extend.
+| *design adopted + provider/CLI legs implemented* (2026-07-09); gossamer/burble verify legs pending
+| Groove ADR 0010 + SPEC §2.1.5: Ed25519 over canonical JSON, detached `signature` member, public keys pinned in `groove-registry.json` (compile-time embedded). Reference provider signs (`GROOVE_SIGNING_KEY`); `groove validate --verify` verifies incl. pins; tamper/pin-mismatch tests green in groove CI. REMAINING for O-8: gossamer consumer verification (Zig `std.crypto.sign.Ed25519`, Phase 2) and burble producer signing (`:crypto` eddsa, stretch); `weft` in the original note is now `spline` (ADR 0009).
 
 | `G-6` Proofs live on a phantom surface
 | open
 | In gossamer the proofs bind a phantom-template ABI (3/12 real `%foreign`), while the *true* cleave (the real Zig symbols) is unspecified. Rehome the **genuinely-generic** proofs + spec here and **rebuild wiring fresh** — do NOT lift the phantom.
 
 | `G-7` Transmute-mode security unspecified in the normative spec
-| open
-| The posture-indexed-by-mode layer (TS-1..7) is newer than RC-1..13 and only drafted. Specify falsifiably, then prove.
+| *specified normatively; kernel-path enforcement demonstrated* (2026-07-09)
+| TS-1..TS-7 promoted into `RANKED-OWNERSHIP-CLEAVE.adoc` v0.3 §Transmute-mode security (owner decision 2026-07-09, full-formal-assault round) with per-invariant enforcement status. Kernel: `posture_of` is the only posture constructor (TS-1), KERN-7 exercises TS-1/2/4/5; `proofs/Cleave/Kernel/Posture.idr` proves totality + monotonicity + preemption duality. TS-6 partial (witness at type level, not yet at a linear layer), TS-7 vacuous in-process — both stated in the spec, not claimed.
 |===
 
 == The bar: feasible -> demonstrated
@@ -83,12 +83,26 @@ wired end-to-end**:
 Until that second point is wired, "transmutable surface" is *feasible*, not
 *demonstrated*. State that honestly in every status doc.
 
+*Status 2026-07-09 — the kernel point is wired.* The kernel (`src/`,
+`docs/KERNEL.adoc`) is the FFI-adjacent point: KERN-1..7 green locally
+(`cargo test`), covering a real in-process capability (the ranked
+owns-tree itself), BOTH soft and hard leases (KERN-5/KERN-6), the
+staircase teardown actually invoked (KERN-3/KERN-4), the linear handle
+actually linear (KERN-2 + `compile_fail` doctest), and the assertions
+guarding running code. Proof mirrors typecheck in CI
+(`cleave-proofs.ipkg`). The *protocol-end* real-capability demonstration
+(gossamer↔burble over groove SPEC §4.6 leases, evidence script
+`groove/examples/soft-hard-lease-demo.sh`) is authored on the estate
+branch and verified against the reference provider; its burble/gossamer
+legs gate on those repos' CI. README status is therefore "demonstrated at
+one kernel point" — *no further*.
+
 == Reuse, don't reinvent
 
 [cols="1,3",options="header"]
 |===
 | Source | Reuse
-| echo-types `Ordinal/CNF`, `RankPow` | omega.n / omega^k ranks (monotone embedding) — only when RC-11 permits ordinals (finite trees do not need them).
+| echo-types `Ordinal/CNF`, `RankPow` | omega.n / omega^k ranks (monotone embedding) — only when RC-11 permits ordinals (finite trees do not need them; the kernel needs none). *Audit deferred 2026-07-09: echo-types was not in session scope; add the repo before attempting the general DM accessibility proof (G-1 residual).*
 | tropical-resource-typing `EchoBridge`, `MinPlus` | infinity = infeasible = bottom; residue->0 = grade->identity.
 | ephapax `Region.idr` `RegionStack` | order-dual stack discipline.
 | gossamer generic proofs (`HandleLinearity`, `ResourceCleanup`, `CapabilityAuthenticity`) | rehome the generic cores; rebuild wiring.

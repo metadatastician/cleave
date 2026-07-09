@@ -1,0 +1,28 @@
+-- SPDX-License-Identifier: MPL-2.0
+-- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+--
+-- Cleave kernel proofs — Idris2 package for type-checking the formal
+-- mirrors of the Rust kernel (src/). Rebuilt fresh against the kernel's
+-- actual types per PROOF-NEEDS G-6; nothing here is lifted from gossamer's
+-- phantom Gossamer.ABI.* surface.
+--
+-- Build:   idris2 --build cleave-proofs.ipkg
+-- Check:   idris2 --typecheck cleave-proofs.ipkg
+
+package cleave-proofs
+
+version = 0.1.0
+
+authors = "Jonathan D.A. Jewell"
+
+brief = "Formal mirrors of the cleave kernel: linearity, ranked ownership, DM teardown step, posture"
+
+sourcedir = "proofs"
+
+depends = base
+
+modules = Cleave.Kernel.Types
+        , Cleave.Kernel.HandleLinearity
+        , Cleave.Kernel.DMMultiset
+        , Cleave.Kernel.ResourceCleanup
+        , Cleave.Kernel.Posture

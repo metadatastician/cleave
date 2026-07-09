@@ -1,8 +1,8 @@
 = Ranked-Ownership Cleave (Groove B-layer cleave standard)
 :doctype: book
-:revnumber: 0.2-draft
-:revdate: 2026-06-15
-:revremark: Groove standard — clean-cleave no-residue discipline (corrected + extended from v0.1)
+:revnumber: 0.3-draft
+:revdate: 2026-07-09
+:revremark: Groove standard — clean-cleave no-residue discipline; v0.3 folds in the transmute-mode security layer (TS-1..13 → TS section, owner decision 2026-07-09)
 :keywords: groove, cleave, well-foundedness, ownership, residue, session-types, linear, affine
 :toc: macro
 :toclevels: 3
@@ -25,7 +25,21 @@ changelog below. Provenance + rationale: `2026-06-15-gossamer-cleave-surface-ses
 
 toc::[]
 
-== Changelog from v0.1 (read this first)
+== Changelog from v0.2 (read this first)
+
+[cols="1,4",options="header"]
+|===
+| Change | Detail
+| *A4 — TS layer folded in (v0.3)*
+| The transmute-mode security invariants `TS-1`..`TS-7`, drafted in
+  `docs/architecture/TRANSMUTE-SECURITY.adoc` (2026-06-16), are promoted to a
+  normative section of this spec per owner decision 2026-07-09 (the
+  full-formal-assault round). The rationale document remains as commentary;
+  the normative text lives here. Each invariant carries an honest
+  "kernel enforcement now" status — promotion is not a claim of full proof.
+|===
+
+== Changelog from v0.1
 
 [cols="1,4",options="header"]
 |===
@@ -319,6 +333,63 @@ RFC-2119 keywords. Each has a stable ID, a statement, and a falsifier.
 | `RC-11`| a rank uses an order strictly larger than the smallest sufficient one.
 | `RC-12`| a non-owning edge is observed after its referent's owning lifetime has ended.
 | `RC-13`| a close remains unresolved (neither retransmitted nor escalated) after a lost final ack.
+|===
+
+== Transmute-mode security invariants (normative, v0.3)
+
+*Integration-degree IS security posture.* The (transaction-gating,
+permissions, preemptability) triple is a function of the dial position — the
+zipper's place on the staircase — so softening the groove automatically
+tightens gating and raises preemptability, hardening does the reverse, and
+the three can never desynchronise. RFC-2119 keywords; falsifiers below.
+Promoted from `docs/architecture/TRANSMUTE-SECURITY.adoc` (which keeps the
+rationale and open questions).
+
+[cols="1,3,2",options="header"]
+|===
+| ID | Statement | Kernel enforcement now (2026-07-09)
+
+| `TS-1` Posture is a function of dial position
+| The (gating, permissions, preemptability) triple MUST be derivable from the zipper's staircase position; it MUST NOT be settable independently of the dial.
+| ENFORCED: `posture_of(stage)` is the only `Posture` constructor (`src/staircase.rs`); KERN-7. Proof: `Posture.idr` `postureOf` total.
+
+| `TS-2` Monotone permissions
+| The permission set MUST be monotone in descent depth: dialing harder MAY only widen, dialing softer MAY only narrow. No non-monotone jumps.
+| ENFORCED + PROVEN (two-stage dial): KERN-7; `Posture.idr` `permsMonotone`.
+
+| `TS-3` Gating floor by mode
+| Each transmute mode MUST declare a minimum transaction-gating floor; operations at that mode MUST NOT run below the floor.
+| DEGENERATE: the kernel has one operation class per stage; floors declared (`Transactional`/`Ungated`) and asserted (KERN-7); per-operation floors await the full surface.
+
+| `TS-4` Preemptability is dual to permanence
+| A Soft (lease-expiring) surface MUST be preemptable; a Hard (lease-refreshing) surface MUST honour a declared notice before preemption.
+| ENFORCED: KERN-7 (`Immediate` vs `WithNoticeMs`); `Posture.idr` `softPreemptable`/`hardNoticed`. Lease behaviour itself: KERN-5/KERN-6, and on the wire groove SPEC §4.6.
+
+| `TS-5` Re-dial re-checks posture
+| A transmute (dialUp/dialDown) MUST re-derive and re-enforce the posture triple atomically; no window may exist where permissions and gating disagree with the new dial position.
+| ENFORCED (single-process form): `Surface::dial` re-derives inside one exclusive borrow; KERN-7 asserts no observable interval. Multi-process atomicity awaits the full surface.
+
+| `TS-6` Posture witnessed, not asserted
+| The posture triple MUST be a type-level/witnessed attribute of the surface, enforceable at the linear layer — not a runtime comment or convention.
+| PARTIAL: witnessed as a value derived by a total function (Rust) and a proof-carrying function (Idris2); linear-layer (`let!`) enforcement awaits the Ephapax wiring. Stated, not claimed.
+
+| `TS-7` No byte-level leakage
+| The posture witness MUST live at B2 (the membrane), NOT in the C/wire encoding (consistent with this spec's layer-placement rule for ranks).
+| VACUOUS in-process (the kernel has no wire); normatively binding on `spline` (posture-blind by B⊥C, spline ADR 0004) and on groove SPEC §4.6 (lease mode is wire-visible *behaviour*, the posture witness is not).
+|===
+
+=== TS falsifiers
+
+[cols="1,5",options="header"]
+|===
+| ID | Violated iff ...
+| `TS-1` | a posture knob is set by a path that does not go through the dial.
+| `TS-2` | dialing softer widens (or harder narrows) the permission set.
+| `TS-3` | an operation executes below its mode's gating floor.
+| `TS-4` | a Soft surface resists preemption, or a Hard surface is preempted with no notice.
+| `TS-5` | an observable interval exists where gating/permissions reflect the pre-dial position after a transmute.
+| `TS-6` | posture is enforced only by convention/runtime check, not a witness.
+| `TS-7` | a posture value appears in the wire byte encoding.
 |===
 
 == Glossary

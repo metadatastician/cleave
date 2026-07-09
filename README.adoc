@@ -30,10 +30,17 @@ preemptability as a function of dial position (TS-1..TS-7, DRAFT).
 
 == Status — read this before believing anything
 
-*Design corpus. ZERO lines of cleave-specific implementation exist.* 0 of 7
-proofs done. `docs/PROOF-NEEDS.adoc` is the authoritative truth-ledger:
-obligations O-1..O-9 and gaps G-1..G-7, **all open**. Per that ledger's own
-instruction: _"transmutable surface" is feasible, not demonstrated._
+*Demonstrated at one kernel point (2026-07-09); the full surface remains
+feasible, not demonstrated.* The kernel of `docs/KERNEL.adoc` is implemented
+(`src/`, ~600 lines of dep-free Rust) with KERN-1..7 green: ranked
+owns-arena (RC-1 live), linear `Handle` (move-consumed + debug drop-bomb),
+soft/hard leases (RC-6), postorder teardown to `⊥` = zero residue asserted
+(RC-13 degenerate), and posture as a function of the dial (TS promotion,
+KERN-7). Idris2 proof mirrors (`cleave-proofs.ipkg`) typecheck in CI —
+rebuilt fresh, never lifted from the phantom (G-6). `docs/PROOF-NEEDS.adoc`
+remains the authoritative truth-ledger: G-1/G-2/G-3 are closed *for the
+kernel path only*; O-1..O-8 residuals and the multi-process/wire
+obligations stay open. No claim extends past the kernel point.
 
 The RSR-template scaffolding (the generic FFI `src/` skeleton, per-directory
 AI manifests, and the 24-workflow governance CI) has been removed; the repo
@@ -48,11 +55,12 @@ real content.
 
 [cols="1,3"]
 |===
-| `docs/standards/RANKED-OWNERSHIP-CLEAVE.adoc` | RC-1..RC-13 normative invariants + falsifier table (v0.2-draft)
+| `docs/standards/RANKED-OWNERSHIP-CLEAVE.adoc` | RC-1..RC-13 + TS-1..TS-7 normative invariants + falsifier tables (v0.3-draft; TS promoted 2026-07-09)
 | `docs/architecture/CLEAVE-ENGINE-DESIGN.adoc` | The dial/zipper/staircase model; soft vs hard groove as descent depth; self-dual teardown
-| `docs/architecture/TRANSMUTE-SECURITY.adoc` | TS-1..TS-7 — integration-degree = security posture (DRAFT, non-normative)
+| `docs/architecture/TRANSMUTE-SECURITY.adoc` | TS rationale + open questions (normative text now lives in RANKED-OWNERSHIP v0.3)
+| `docs/architecture/THE-JOINERY.adoc` | The orientation doc: maths / art / science / engineering of cleave-groove-spline, and the triage
 | `docs/PROOF-NEEDS.adoc` | The honest ledger. Do not edit casually; it is the best artifact in this repo
-| `docs/KERNEL.adoc` | **The next milestone**: the minimal demonstrable kernel — one dial point, linear handles, 2-stage staircase, RC-1/RC-6/RC-13 as executable assertions, acceptance IDs KERN-1..KERN-6
+| `docs/KERNEL.adoc` | The kernel contract — **implemented in `src/`** (KERN-1..7 green, `tests/kern.rs`); Idris2 mirrors in `proofs/` (`cleave-proofs.ipkg`)
 |===
 
 == Relationship to groove

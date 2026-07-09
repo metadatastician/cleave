@@ -9,11 +9,13 @@
 :sectnums:
 
 [abstract]
-This document specifies the *security posture indexed by transmute mode* — the
-load-bearing novelty of the cleave engine, and **newer than RC-1..13**. It is
-NOT yet part of the normative ranked-ownership cleave spec; it is a candidate
-v0.3 layer captured here so the design is not lost. Treat every invariant below
-as DRAFT/proposed until reviewed and folded into the spec.
+*PROMOTED 2026-07-09.* The TS-1..TS-7 invariants below were folded into the
+normative spec as `RANKED-OWNERSHIP-CLEAVE.adoc` v0.3 §"Transmute-mode
+security invariants" (owner decision, full-formal-assault round), each with
+an honest per-invariant enforcement status (kernel KERN-7 +
+`proofs/Cleave/Kernel/Posture.idr`). **The normative text lives there**;
+this document remains as the design rationale and keeps the open questions.
+The invariant statements below are retained verbatim for provenance.
 
 toc::[]
 
@@ -86,5 +88,10 @@ RFC-2119 keywords; each has a falsifier. None are adopted yet.
 
 == Status
 
-DRAFT. Not in the normative spec. Captured 2026-06-16 so it is not lost. Fold into
-`RANKED-OWNERSHIP-CLEAVE.adoc` as a new section only after owner review.
+PROMOTED (2026-07-09, owner decision). Normative text:
+`RANKED-OWNERSHIP-CLEAVE.adoc` v0.3 §Transmute-mode security invariants,
+with per-invariant enforcement status (kernel KERN-7 +
+`proofs/Cleave/Kernel/Posture.idr`) rather than a blanket claim. This file
+keeps the thesis, the differentiator argument, and the open questions
+(posture-lattice unification; spline posture-blindness — answered "blind"
+by spline ADR 0004; snif-as-middle-detent; preemption/rupture boundary).
