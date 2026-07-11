@@ -66,7 +66,7 @@ real content.
 == Relationship to groove
 
 The Groove protocol lives at
-https://github.com/hyperpolymath/groove-protocol[groove-protocol] and is
+https://github.com/hyperpolymath/groove[groove-protocol] and is
 *normatively independent of cleave* (its ADR 0007). The cleave-layered
 formulation of groove (soft/hard as dial positions, lease semantics from
 RC-6) is preserved there as `spec/LAYERING.adoc`, an explicitly aspirational
