@@ -29,6 +29,7 @@ on:
       - '.github/workflows/kernel.yml'
 
 permissions:
+  actions: read
   contents: read
 
 concurrency:
