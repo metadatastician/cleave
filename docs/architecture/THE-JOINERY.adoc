@@ -137,6 +137,38 @@ residual, echo-types audit deferred); Groove v2 fully layered on cleave
 exists — not a commitment); posture-lattice unification (TS open
 question 1); burble's E2EE/PTP-hardware headline numbers.
 
+== The vendored copies (drift watchlist)
+
+Two of the consumers are duplicated in other repos. These copies are a drift
+hazard: the canonical repo is the *only* source of truth, and the estate rule
+is **never restore a canonical repo from one of its copies** (copies lag; the
+in-tree canonical is ahead). Recorded here so a future cross-repo conformance
+job (the joinery enforcement step) can flag them mechanically. Measured
+2026-07-27; verify before acting — this is a watchlist, not a diff.
+
+*gossamer* — canonical: `meta-repos/gossamer`. Copies / embeds:
+
+* `meta-repos/paint-type/third_party/gossamer` — vendored under third_party.
+* `hyper-repos/_ESOTERIC_GROUP _SET/airborne-submarine-squadron/gossamer` — game front-end copy.
+* `hyper-repos/hypatia/src/ui/gossamer` + `hyper-repos/hypatia/test/gossamer` — UI/test fixtures.
+* `hyper-repos/developer-ecosystem/rescript-ecosystem/packages/bindings/gossamer` — ReScript bindings package.
+* `worktrees/incident-ddraig-restore/gossamer` — transient incident worktree (full repo; not a source).
+
+NOTE: `hyper-repos/panll/src-gossamer` is panll's *own* Rust backend (it
+consumes the `gossamer-rs` binding) — **not** a vendored gossamer copy.
+
+*panll* — canonical: `hyper-repos/panll`. Copies / embeds:
+
+* `hyper-repos/boj-server/panll`
+* `hyper-repos/ambientops/panll`
+* `hyper-repos/panic-attack/src/panll`
+* `hyper-repos/standards/panll-panels` (panel-clades extraction; also duplicated at `repos/standards/panll-panels`).
+
+Excluded as noise (not copies): `**/.claude/worktrees/**` transient agent
+worktrees, `**/io/gossamer` Java package namespaces, and the parallel `repos/`
+tree that duplicates parts of `hyper-repos/` (a whole-checkout duplication,
+tracked separately).
+
 == Reading order
 
 `groove` ADR 0009 (names) → this file → `CLEAVE-ENGINE-DESIGN.adoc` (the
