@@ -1,101 +1,64 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
-// Template: rsr-template-repo/docs/status/PROOF-STATUS.adoc
-// Tracks proof completion. Requirements defined in PROOF-NEEDS.adoc
 = Proof Status — CLEAVE
 
-== Summary
+[IMPORTANT]
+====
+*The canonical proof ledger is `docs/PROOF-NEEDS.adoc`.* Read that, not this.
+This page is a summary view; where the two disagree, PROOF-NEEDS wins.
 
-[cols="2,1,1,1,1,1", options="header"]
+Until 2026-07-28 this file was an unedited RSR template reporting
+"*Overall*: 0% proven" against categories (ABI/TP/INV/SEC/…) cleave does not
+use — while the kernel had been demonstrated and its proofs green since
+2026-07-09. Those numbers were never real; they are replaced below with what
+actually runs.
+====
+
+== What is machine-verified today
+
+Re-measured 2026-07-28 from a clean checkout:
+
+[cols="3,2,3",options="header"]
 |===
-| Category | Total | Done | In Progress | Blocked | Remaining
+| Artifact | Result | How to reproduce
 
-| ABI/FFI (ABI) | 5 | 0 | 0 | 0 | 5
-| Typing (TP) | 2 | 0 | 0 | 0 | 2
-| Invariant (INV) | 0 | 0 | 0 | 0 | 0
-| Security (SEC) | 0 | 0 | 0 | 0 | 0
-| Concurrency (CONC) | 0 | 0 | 0 | 0 | 0
-| Algorithm (ALG) | 0 | 0 | 0 | 0 | 0
-| Domain (DOM) | 0 | 0 | 0 | 0 | 0
-| *Total* | *7* | *0* | *0* | *0* | *7*
-|===
+| Rust acceptance suite (KERN-1..7 + companions)
+| 10/10 pass (debug); release drops the drop-bomb test by design
+| `cargo test --all-targets`
 
-*Overall*: 0% proven
+| Linearity compile-fail doctest
+| 1/1 pass (a second `teardown` does not compile)
+| `cargo test --doc`
 
-== Proofs Done
+| Idris2 proof mirror (`cleave-proofs.ipkg`)
+| 5/5 modules typecheck, exit 0
+| `idris2 --typecheck cleave-proofs.ipkg`
 
-// Format:
-// | ID | Proof | Prover | File | Date | Verified By |
-// | ABI-1 | Non-null pointer proofs | Idris2 | verification/proofs/idris2/ABI/Pointers.idr | 2026-XX-XX | idris2 --check |
-
-[cols="1,3,1,3,1,2", options="header"]
-|===
-| ID | Proof | Prover | File | Date | Verified By
-
-| — | No proofs completed yet | — | — | — | —
-|===
-
-== Proofs In Progress
-
-[cols="1,3,1,2,1,2", options="header"]
-|===
-| ID | Proof | Prover | Assignee | Started | Blocker
-
-| — | — | — | — | — | —
+| Trust base of the mirror
+| zero `believe_me` / `assert_total` / `postulate`; every module `%default total`
+| `grep -rn 'believe_me\|assert_total\|postulate' proofs/`
 |===
 
-== Proofs Blocked
+NOTE: Gate the mirror with `--typecheck <ipkg>`, never a per-file
+`idris2 --check` loop: `--check` exits 0 on module-load errors and on unsolved
+holes (measured on Idris2 0.7.0 *and* 0.8.0), so a per-file loop is a fake gate.
 
-[cols="1,3,2,3", options="header"]
-|===
-| ID | Proof | Blocked By | Notes
+== Scope of those results — read this before quoting them
 
-| — | — | — | —
-|===
+Green above means *the kernel path*: exactly one demonstrated dial point (the
+FFI-adjacent, in-process point, 2026-07-09). It is not the full surface.
+Per `docs/PROOF-NEEDS.adoc`:
 
-== Proofs Remaining
+* `O-1`..`O-5`, `O-9`, `G-1`, `G-7` — closed *for the kernel path only*.
+* `O-6` (joint completion, RC-9) and `O-7` (clean-XOR-rupture, RC-13 general)
+  — open: they need two peers and a wire, neither of which exists yet.
+* `O-8`/`G-5` — partial: groove's provider/CLI signing legs are in; the
+  gossamer verify leg and burble producer-signing leg are not.
+* `G-4` — open: RC-1..13 are vacuously green outside the kernel, because no
+  real Hard-owns-Soft owns-graph exists in any consumer yet.
+* `G-2`/`G-3` gossamer legs — merged but *unverified*: their designated CI
+  (gossamer `e2e.yml`) has never parsed. See those rows in PROOF-NEEDS.
 
-[cols="1,3,1,1,1,1", options="header"]
-|===
-| ID | Proof | Category | Prover | Priority | Est. Effort
-
-| ABI-1 | Non-null pointer proofs | ABI | Idris2 | P1 | 2h
-| ABI-2 | Memory layout correctness | ABI | Idris2 | P1 | 4h
-| ABI-3 | Platform type size proofs | ABI | Idris2 | P1 | 2h
-| ABI-4 | FFI function return type proofs | ABI | Idris2 | P1 | 2h
-| ABI-5 | C ABI compliance | ABI | Idris2 | P1 | 4h
-| TP-1 | Core data type well-formedness | TP | Idris2 | P1 | 4h
-| TP-2 | Public API type safety | TP | Lean4 | P2 | 4h
-|===
-
-== Verification Commands
-
-[source,bash]
-----
-# Check all Idris2 proofs
-just proof-check-idris2
-
-# Check all Lean4 proofs
-just proof-check-lean4
-
-# Check all Agda proofs
-just proof-check-agda
-
-# Check all Coq proofs
-just proof-check-coq
-
-# Run all proof checks
-just proof-check-all
-
-# Scan for dangerous patterns
-panic-attack assail --proofs-only
-----
-
-== Changelog
-
-[cols="1,3,1", options="header"]
-|===
-| Date | Change | By
-
-| 2026-04-04 | Initial proof status tracking | Template
-|===
+The bar for "demonstrated" is unchanged: real capability, soft *and* hard,
+descent actually invoked, handle actually linear, proof guarding running code.
+One point meets it. Saying "one point, no further" is the method.

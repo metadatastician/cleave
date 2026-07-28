@@ -44,7 +44,7 @@ staircase, and would turn the kernel into the library.
 == Acceptance criteria
 
 Each `KERN-*` is one observable behavior with a test named after it; the
-kernel is done when all six are green in CI.
+kernel is done when all seven are green in CI.
 
 [cols="1,4,2",options="header"]
 |===
@@ -55,6 +55,7 @@ kernel is done when all six are green in CI.
 | KERN-4 | The two-stage staircase tears down in the order-dual of construction: stage-2 resources release before stage-1, children before parents; the audit log proves the order (assertion, degenerate RC-8/O-4). | O-4, G-2
 | KERN-5 | A **soft** lease expires: absent refresh within its TTL, the resource is wiped and the audit shows a zero-residue expiry. | RC-6 (soft), G-1
 | KERN-6 | A **hard** lease refreshes: with a heartbeat, the lease persists across ≥3 TTL windows; when the heartbeat stops, it degrades to the KERN-5 path. | RC-6 (hard)
+| KERN-7 | Posture is a total, monotone function of dial position, re-derived atomically on re-dial: every stage has a posture (totality), permissions widen with descent depth (TS-2), and no intermediate posture is observable across a re-dial (TS-5, single-process). `posture_of` is the sole constructor. | O-9, TS-1/2/4/5, G-7
 |===
 
 == Implementation recommendation
@@ -84,7 +85,12 @@ do NOT lift them; rebuild against the kernel's actual types).
 * No WASM/sandbox stage (that is the *third* dial point).
 * No full RC-1..13; no multi-process clean-cleave (O-6) or wire-level
   rupture (O-7 beyond the degenerate case).
-* No transmute-security enforcement — TS-1..7 stays DRAFT (G-7, O-9).
+* Transmute-security: TS-1..7 became *normative v0.3* and is kernel-enforced
+  (KERN-7 + `proofs/Cleave/Kernel/Posture.idr`) on 2026-07-09 — this line
+  previously said "stays DRAFT", which is stale. Still open at kernel scope:
+  TS-3 degenerate (per-operation floors await the full surface), TS-5
+  single-process only, TS-6 partial (awaits the Ephapax `let!` layer), TS-7
+  vacuous in-process (no wire). Full-surface proof remains G-7/O-9.
 * No manifest signing (G-5, O-8) — that lives with groove-protocol.
 
 == Definition of done

@@ -3,7 +3,8 @@
 # Copyright (c) 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 #
 # Structure check for the cleave design repo. Tolerant before the prune
-# (PRUNE-MANIFEST.md), strict after: once the per-directory AI manifests are
+# (see the prune notes in the structure-check workflow), strict after: once
+# the per-directory AI manifests are
 # gone, any regression fails.
 
 set -uo pipefail
@@ -39,14 +40,14 @@ manifest_count=$(find . -name '*AI-MANIFEST*' -not -path './.git/*' | wc -l)
 if [ "$manifest_count" -le 1 ]; then
   echo "PASS: at most one AI manifest ($manifest_count)"
 elif [ "$manifest_count" -gt 1 ]; then
-  echo "WARN: PRUNE PENDING ($manifest_count AI manifests; see PRUNE-MANIFEST.md)"
+  echo "WARN: PRUNE PENDING ($manifest_count AI manifests; target is at most one)"
 fi
 
 workflow_count=$(ls .github/workflows 2>/dev/null | wc -l)
 if [ "$workflow_count" -le 5 ]; then
   echo "PASS: workflow count $workflow_count (<= 5)"
 else
-  echo "WARN: PRUNE PENDING ($workflow_count workflows; see PRUNE-MANIFEST.md)"
+  echo "WARN: PRUNE PENDING ($workflow_count workflows; target is at most five)"
 fi
 
 echo "----"
