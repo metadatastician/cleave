@@ -9,6 +9,17 @@
 
 *Current Grade:* X
 
+[WARNING]
+====
+*NOT ASSESSED.* Grade `X` and the tables below are unedited CRG template
+placeholders, not a finding — this document has never been filled in. Do not
+cite a cleave readiness grade from this file.
+
+For what is actually verified, see `docs/status/PROOF-STATUS.adoc` (summary)
+and `docs/PROOF-NEEDS.adoc` (the canonical ledger). A real CRG assessment is
+owner work and is deliberately not fabricated here.
+====
+
 This line is parsed by `just crg-grade` / `just crg-badge`. The grade above is
 the worst-graded in-scope component — *the project's weakest link sets its
 grade*. See the per-component table in §3.

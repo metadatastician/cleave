@@ -2,7 +2,8 @@
 # The one real workflow for a design repo: the docs that ARE the repo exist,
 # the README stays honest, and the prune doesn't regress (ADR 0008 in
 # groove-protocol). Everything else in this directory is scheduled for
-# deletion per PRUNE-MANIFEST.md.
+# deletion per the prune targets asserted in tests/validate_structure.sh
+# (at most one AI manifest, at most five workflows).
 name: structure-check
 
 on:
