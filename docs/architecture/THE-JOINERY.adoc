@@ -115,6 +115,90 @@ AffineScript; dialect/port reconciliation of its frozen-legacy backend) is
 Phase 2; modelling attach/extract as `Surface::adopt` + re-dial on one
 kernel surface is Phase 3.
 
+== The state of the join (2026-07-29)
+
+Machine-readable companion: `JOINERY-STATE.a2ml` (same directory). Full
+narrative: `dev-notes/joinery-session-sitrep-2026-07-29.md` (estate-local).
+
+=== Where the join actually is
+
+[cols="1,1,3",options="header"]
+|===
+| Layer | Proven? | Qualifier
+
+| `groove`
+| effectively, for v0.x
+| Live provider + consumer; executable conformance (CONF-L1/L2). Its three
+  protocol theorems (handshake termination, capability authenticity, IPC
+  dispatch) became **machine-verified for the first time** on 2026-07-28 —
+  before that the gate was `continue-on-error` with schedule-only triggers and
+  an install step that could never succeed, so the typecheck had *never run*.
+
+| `cleave`
+| at exactly one point, by design
+| The kernel (2026-07-09), re-verified 2026-07-28. Everything else is
+  kernel-only, or wire-blocked (below).
+
+| `spline`
+| no — 0 of 4 criteria
+| Foundation for criterion (a) merged in burble (Bebop plane, codec tests,
+  codegen gate), but the flag is **default-off**: criterion (a) requires the
+  *default* transport path.
+|===
+
+=== Why spline is now cleave's critical path
+
+Cleave's remaining heavyweight obligations — `O-6` (joint completion, RC-9),
+`O-7` (clean-XOR-rupture, RC-13 general), `TS-5` (multi-process atomic re-dial)
+and `TS-7` (posture never on the wire, currently *vacuous* because there is no
+wire) — **all require real bytes between two processes**. That wire is spline.
+Advancing spline therefore advances cleave; polishing cleave alone cannot reach
+those obligations. Spline's own promotion bar (ADR 0005) doubles as the trio's
+integration test, and its criterion (d) is the venue where cleave's `G-3`/`TS-7`
+discipline gets demonstrated end-to-end.
+
+=== The discipline this round established
+
+Three defect *classes* were found, each invisible until measured, each now
+guarded:
+
+. **Fake gates.** A gate that cannot fail is worse than no gate: it converts
+  "unverified" into "green". Found in groove's proofs workflow (triple-fake),
+  burble's `test-launcher.sh` (printed ✗, exited 0), and — as a *tooling*
+  property — `idris2 --check`, which exits 0 on module-not-found and on
+  unsolved holes (measured on 0.7.0 *and* 0.8.0). Gate Idris2 with an `.ipkg`
+  `--typecheck`, never a per-file `--check` loop.
+. **Never-parsed workflows.** gossamer's `e2e.yml` had invalid YAML from a
+  sweep (indented `actions: read` under scalar `permissions: read-all`), so
+  every run completed with **zero jobs** — for about three weeks, while being
+  the CI this repo's own ledger names as the `G-2`/`G-3` verifier. Tells: the
+  workflow displays as its *path* rather than its name, and
+  `runs/<id>/jobs` is empty.
+. **Generated mirrors drifting from their sources.** burble's Bebop generator
+  *crashed* (so the codecs could not be reproduced at all) and its committed
+  output had been hand-enriched, making `@moduledoc "Auto-generated from…"`
+  false. The same class re-appeared immediately in gossamer, where new Zig FFI
+  exports landed without regenerating `ForeignGen.idr` — caught by the
+  ABI↔FFI cleave gate, which is what that gate is for.
+
+The rule that follows: **every gate must be negative-tested** — break it, watch
+it go red, restore — and any gate that is deliberately not armed must say so in
+its own output, not just in a commit message.
+
+=== Known-red at the time of writing
+
+* gossamer `main`: `ABI Typecheck Gate` and `E2E + Safety` fail at `1c69cbb2`
+  — `ForeignGen.idr` stale after new FFI exports; blocked additionally on an
+  unmapped Zig type (`ThemeKind`) that `just abi-gen` cannot yet handle. Both
+  gates were green earlier the same day.
+* gossamer: four workflows (`secret-scanner`, `scorecard`,
+  `spark-theatre-gate`, `hypatia-scan`) run with **zero jobs** from a cause
+  distinct from the `e2e.yml` YAML break — they parse cleanly.
+* groove `main`: `ci` failing (undiagnosed).
+
+Cleave itself is green (`cargo test --all-targets` 10/10 debug, compile-fail
+doctest, `idris2 --typecheck cleave-proofs.ipkg` 5/5, `structure-check` PASS).
+
 == The triage (what is ludicrous, what is fabulous, what is necessary)
 
 *Necessary and done this round:* the kernel; drift reconciliation at source

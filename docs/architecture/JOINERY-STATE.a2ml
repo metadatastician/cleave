@@ -1,0 +1,247 @@
+# SPDX-License-Identifier: MPL-2.0
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+#
+# JOINERY-STATE.a2ml — machine-readable state of the cleave/groove/spline
+# joinery and its consumers. Companion to THE-JOINERY.adoc (human narrative,
+# same directory). Where the two disagree, THE-JOINERY.adoc is the prose of
+# record and docs/PROOF-NEEDS.adoc is the proof ledger of record.
+#
+# NOT a substitute for measurement. Every `status` below was measured on the
+# stated date; re-measure before relying on it. Fields marked `verified-by`
+# name the command or run that produced the claim.
+
+[metadata]
+version = "1.0.0"
+last-measured = "2026-07-29"
+narrative = "docs/architecture/THE-JOINERY.adoc"
+proof-ledger = "docs/PROOF-NEEDS.adoc"
+sitrep = "dev-notes/joinery-session-sitrep-2026-07-29.md"  # estate-local, not in-repo
+
+# ---------------------------------------------------------------------------
+# The trio and its consumers
+# ---------------------------------------------------------------------------
+
+[[layer]]
+name = "cleave"
+role = "surface"
+repo = "metadatastician/cleave"
+checkout = "meta-repos/cleave"
+status = "demonstrated-at-one-point"
+demonstrated-points = 1
+demonstrated-date = "2026-07-09"
+blocks = []
+verified-by = "cargo test --all-targets (10/10 debug); idris2 --typecheck cleave-proofs.ipkg (5/5)"
+note = "Bar for 'demonstrated': real capability, soft AND hard, descent invoked, handle linear, proof guarding running code."
+
+[[layer]]
+name = "groove"
+role = "protocol"
+repo = "metadatastician/groove"
+checkout = "meta-repos/groove"
+status = "proven-for-v0x"
+ssot = "registry/groove-registry.json"
+verified-by = "proofs workflow green on main 2026-07-28 (real gate: ipkg --typecheck, no continue-on-error)"
+note = "Hub. Consumers import groove; groove vendors none of them."
+
+[[layer]]
+name = "spline"
+role = "data-form"
+repo = "metadatastician/spline"
+checkout = "meta-repos/spline"
+status = "seed-only"
+promotion-criteria-met = 0
+promotion-criteria-total = 4
+has-src = false
+note = "ADR 0005 bar. Must not lift code from protocol-squisher/squisher-corpus (frozen)."
+
+[[consumer]]
+name = "gossamer"
+repo = "metadatastician/gossamer"
+checkout = "meta-repos/gossamer"
+groove-role = "consumer"
+groove-port = 6470
+owns = ["groove ABI proofs (gossamer-groove.ipkg)"]
+
+[[consumer]]
+name = "burble"
+repo = "metadatastician/burble"
+checkout = "meta-repos/burble"
+groove-role = "provider"
+groove-port = 6473
+owns = ["the .bop schemas (spline ADR-0003)"]
+
+[[consumer]]
+name = "panll"
+repo = "hyperpolymath/panll"
+checkout = "hyper-repos/panll"
+groove-role = "participant"
+groove-port = 8000
+offers = ["panel-ui"]
+
+# ---------------------------------------------------------------------------
+# Dependency edges. Exactly ONE is compile-time; the rest are protocol/spec.
+# This is why the programme is built around gates, not build ordering.
+# ---------------------------------------------------------------------------
+
+[[edge]]
+from = "panll"
+to = "gossamer"
+kind = "compile-time"
+mechanism = "Cargo path-dep (gossamer-rs) + libgossamer.so Zig FFI"
+status = "resolved-via-symlink-stopgap"
+target-state = "versioned artifact (crate or git tag) — retires the stopgap"
+
+[[edge]]
+from = "gossamer"
+to = "groove"
+kind = "runtime-protocol"
+
+[[edge]]
+from = "burble"
+to = "groove"
+kind = "runtime-protocol"
+
+[[edge]]
+from = "panll"
+to = "groove"
+kind = "runtime-protocol"
+
+[[edge]]
+from = "groove"
+to = "cleave"
+kind = "design-aspirational"
+normative = false
+note = "spec/LAYERING.adoc annex + ADR 0007. Trigger condition (demonstrable kernel) MET since 2026-07-09; the v2 discussion is unlocked but deliberately deferred."
+
+[[edge]]
+from = "spline"
+to = "groove"
+kind = "design-presupposes"
+
+[[edge]]
+from = "spline"
+to = "burble"
+kind = "design-aligns-over"
+note = "Alignment mapping only; never a copied schema (ADR 0003)."
+
+# ---------------------------------------------------------------------------
+# Why spline gates cleave: these obligations need two processes and a wire.
+# ---------------------------------------------------------------------------
+
+[wire-blocked]
+obligations = ["O-6", "O-7", "TS-5", "TS-7"]
+unblocked-by = "spline"
+rationale = "O-6 joint completion and O-7 clean-XOR-rupture need two peers; TS-5 needs multi-process atomicity; TS-7 (posture never on the wire) is VACUOUS while no wire exists."
+
+# ---------------------------------------------------------------------------
+# Defect classes found 2026-07-28/29, each now guarded. Detection recipes are
+# the point of this section — they generalise beyond these repos.
+# ---------------------------------------------------------------------------
+
+[[defect-class]]
+id = "fake-gate"
+summary = "A gate that cannot fail converts 'unverified' into 'green'."
+instances = [
+  "groove proofs.yml: continue-on-error + schedule-only triggers + an apt install of idris2 that cannot succeed on ubuntu-latest -> the typecheck step NEVER executed",
+  "burble test-launcher.sh: probed a path both stale and wrong, printed the failure marker, exited 0",
+]
+tooling-instance = "idris2 --check exits 0 on module-not-found AND on unsolved holes (measured on 0.7.0 and source-built 0.8.0). ipkg --typecheck exits 1 correctly."
+rule = "Gate Idris2 with an .ipkg --typecheck, never a per-file --check loop. Negative-test every gate: break it, watch it go red, restore."
+
+[[defect-class]]
+id = "never-parsed-workflow"
+summary = "Invalid workflow YAML produces runs with ZERO jobs — silent, not loud."
+instance = "gossamer e2e.yml: a sweep appended an indented `actions: read` under a SCALAR `permissions: read-all`. Dead ~3 weeks while being the CI that cleave's ledger names as the G-2/G-3 verifier."
+detection = [
+  "gh run list shows the workflow as its FILE PATH instead of its name:",
+  "gh api repos/<r>/actions/runs/<id>/jobs --jq '.jobs|length' returns 0",
+]
+fix = "Delete the stray key: read-all already grants every read scope including actions."
+
+[[defect-class]]
+id = "generated-mirror-drift"
+summary = "A committed artefact claims to be generated but cannot be, or no longer matches, its source."
+instances = [
+  "burble: mix bebop.generate CRASHED (binary_part on a consumed tail; nested } never decremented depth) -> codecs could not be reproduced from their schemas at all",
+  "burble: committed codecs hand-enriched after generation (17331 committed vs 14036 generated) -> the 'Auto-generated from' moduledoc is false",
+  "gossamer: new Zig FFI exports landed without regenerating ForeignGen.idr -> caught by the ABI/FFI cleave gate, as designed",
+]
+rule = "Every generated artefact needs a regenerate-and-diff gate; if the gate is deliberately not armed, it must SAY SO in its own output."
+
+[[defect-class]]
+id = "ledger-drift-both-directions"
+summary = "Status documents can under-report as well as over-report; check both."
+instances = [
+  "cleave PROOF-STATUS.adoc announced '0% proven' (unedited template) against a green demonstrated kernel",
+  "cleave PROOF-NEEDS G-2/G-3 said 'pending CI' for legs that had already merged — while the CI in question had never parsed",
+]
+
+# ---------------------------------------------------------------------------
+# Open items. `owner-decision = true` means it is NOT an agent's call.
+# ---------------------------------------------------------------------------
+
+[[open]]
+id = "gossamer-main-red"
+severity = "blocking"
+owner-decision = false
+summary = "ABI Typecheck Gate + E2E fail at 1c69cbb2 (PR #141): ForeignGen.idr stale after new FFI exports; additionally blocked on unmapped Zig type ThemeKind."
+note = "Both gates were GREEN earlier the same day at 8fd5b2d6 / 3ab297b9."
+
+[[open]]
+id = "gossamer-zero-job-workflows"
+severity = "high"
+owner-decision = false
+summary = "secret-scanner, scorecard, spark-theatre-gate, hypatia-scan all run with jobs=0 from a cause distinct from the e2e YAML break (these parse cleanly). A dead secret-scanner is a security gap."
+
+[[open]]
+id = "bop-leave-reason-type"
+severity = "medium"
+owner-decision = true
+summary = "voice_signal.bop types Leave.reason as `string` though a LeaveReason enum exists in room_event.bop, with comment values matching neither."
+note = "Wire change. Cheapest to fix BEFORE spline criterion (a) goes default-on."
+
+[[open]]
+id = "bebop-generator-truncation"
+severity = "medium"
+owner-decision = true
+summary = "Decoders do not detect truncation (a buffer declaring a 4-billion-byte string decodes to \"\"). Guarded at one call site; the generator remains generically lenient."
+note = "Fix before criterion (b): a spec-correct Zig decoder will disagree with burble's lenient bytes, and burble's bytes are what is deployed."
+
+[[open]]
+id = "bebop-codec-provenance"
+severity = "medium"
+owner-decision = true
+summary = "Committed codecs are hand-enriched, so the byte-identity gate cannot be armed."
+options = ["accept the doc loss and regenerate", "teach the generator to emit the docs (recommended)", "retire the generator and hand-maintain"]
+
+[[open]]
+id = "cleave-g2-g3-closure"
+severity = "low"
+owner-decision = false
+summary = "G-2/G-3 can now close on machine evidence — but wait for the gossamer gates to be green again before citing run IDs."
+
+[[open]]
+id = "cleave-topology-readiness"
+severity = "low"
+owner-decision = true
+summary = "TOPOLOGY.adoc is RSR boilerplate with zero cleave content; READINESS.adoc is an unassessed CRG template, deliberately banner-marked rather than fabricated."
+
+[[open]]
+id = "groove-v2-layering-discussion"
+severity = "low"
+owner-decision = true
+summary = "The LAYERING annex's trigger (a demonstrable cleave kernel) has been met since 2026-07-09. Opening the discussion is a deliberate choice, not a default."
+
+# ---------------------------------------------------------------------------
+# Recommended next order (advisory).
+# ---------------------------------------------------------------------------
+
+[next]
+order = [
+  "unbreak gossamer main (ForeignGen + ThemeKind mapping)",
+  "diagnose the four zero-job workflows (secret-scanner first)",
+  "bebop-generator-truncation, then the bop-leave-reason-type ruling",
+  "spline criterion (b): gossamer parses the same plane, validated against burble's ACTUAL bytes",
+  "Phase 2: standards/groove-conformance reusable workflow (registry SSOT -> enforced)",
+  "Phase 3: gossamer-rs versioned artifact (retires the panll symlink stopgap)",
+]
