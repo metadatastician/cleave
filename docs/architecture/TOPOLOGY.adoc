@@ -1,36 +1,79 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
-// Last updated: 2026-04-04
+// Last updated: 2026-08-04 (replaced untouched RSR scaffold with the real topology)
 = Architecture Topology
 
 == System Overview
 
-RSR (Rhodium Standard Repository) template provides the canonical scaffold for all hyperpolymath projects, with integrated CI/CD, documentation, and service discovery patterns.
+Cleave is the *surface* of the joinery trio (cleave = surface, groove =
+protocol, spline = data-form/wire): a transmutable dial whose kernel
+demonstrates ranked ownership with clean-XOR-rupture teardown at exactly one
+dial point (2026-07-09, per the repo's own bar in `docs/PROOF-NEEDS.adoc`).
+The kernel is deliberately small and dependency-free; everything protocol- or
+wire-shaped lives in groove/spline, and cleave's remaining XL obligations are
+wire-blocked on spline (see `docs/architecture/THE-JOINERY.adoc`).
 
 == Component Overview
 
-[cols="1,1,2", options="header"]
+[cols="1,1,3", options="header"]
 |===
 | Component | Language | Purpose
 
-| dogfood-gate workflow | YAML | Quality checks (CRG, security, linting)
-| eclexiaiser-validate job | YAML | Resource cost awareness scoring
-| Groove discovery | JSON | Service endpoint registration
+| `src/` kernel (~850 LOC, std-only, `forbid(unsafe_code)`)
+| Rust
+| The demonstrated dial point: capability = the ranked owns-arena itself;
+  `Lease::Soft/Hard` (KERN-5/6); `release_subtree` as the only teardown path;
+  linear `Handle` (move-consume, `compile_fail` doctest, debug drop-bomb);
+  RC asserts live in running code. Acceptance suite = KERN-1..7.
+
+| `proofs/Cleave/Kernel/*.idr` + `cleave-proofs.ipkg`
+| Idris2 (pinned v0.8.0 in CI)
+| Proof mirrors of the kernel invariants: `Types`, `Posture` (KERN-7),
+  `ResourceCleanup` (tree-postorder plan, termination, residue-0),
+  `DMMultiset` (Dershowitz–Manna step lemma), `HandleLinearity`
+  (`teardown : (1 h : Handle) -> Perp`). Mirrors guard running code; they are
+  not extracted code (stated in the honesty ledger, `proofs/README.adoc`).
+
+| `docs/PROOF-NEEDS.adoc`
+| AsciiDoc
+| THE canonical ledger — completion tracking lives here, not in the issue
+  tracker. `docs/status/PROOF-STATUS.adoc` is the re-measured summary.
+
+| `docs/standards/RANKED-OWNERSHIP-CLEAVE.adoc`
+| AsciiDoc
+| The v0.3-draft cleave standard (RC-1..13 + TS-1..7), consumed by groove and
+  the consumers.
+
+| `.github/workflows/kernel.yml`
+| YAML
+| The Cleave Kernel Gate: cargo build + KERN suite (debug, doctest, release),
+  then ipkg-based `idris2 --typecheck` of the proof mirrors (per-file
+  `--check` is a known fake gate estate-wide).
 |===
 
-== Data Flow
+== Joinery Edges
 
 ----
-[Code Push] → [GitHub Actions] → [hypatia scan] → [eclexiaiser validate] → [Results]
+        spec/registry (SSOT)            wire (future)
+groove ─────────────────────▶ cleave ◀──────────────── spline (src-less until
+   │                                                    ADR-0005 bar is met)
+   │ groove §4.6 leases
+   ▼
+gossamer (consumer; owns the groove ABI proofs)   burble (provider; owns .bop)
 ----
 
-== Integration Points
-
-* *Upstream*: Hypatia (neurosymbolic CI/CD), eclexiaiser (resource scoring)
-* *Downstream*: All RSR-based repositories (500+ instances)
+* Every cleave edge is *protocol or spec* — the joinery's only compile-time
+  edge is panll→gossamer, which does not touch cleave. Dominant risk is
+  contract drift, not build order; hence gates over sequencing.
+* Cleave's Tier-A frontier (O-6 joint completion, O-7 clean-XOR-rupture over
+  a wire, TS-5 multi-process re-dial, TS-7 posture-never-on-wire) needs real
+  bytes between processes; that wire is spline. Working on spline *is*
+  working on cleave.
+* The G-2/G-3 gossamer legs are machine-verified by gossamer's
+  `ABI Typecheck Gate` + `E2E + Safety` workflows (green 2026-08-03; run IDs
+  in the ledger).
 
 == Deployment
 
-* Container: Stapeln Six ecosystem
-* CI/CD: GitHub Actions → Hypatia scan → eclexiaiser-validate (6 scorecard dimensions) → Mirror
-* Service Discovery: Groove protocol (.well-known/groove/manifest.json)
+Cleave ships no service. Its artefacts are the kernel crate (unpublished), the
+proof mirrors, and the standard; CI is the only runtime.

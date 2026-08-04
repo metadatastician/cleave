@@ -6,7 +6,7 @@ version = "0.1.0"
 edition = "2021"
 license = "MPL-2.0"
 description = "The cleave kernel: minimal demonstrable core of the transmutable interface engine (docs/KERNEL.adoc)"
-repository = "https://github.com/hyperpolymath/cleave"
+repository = "https://github.com/metadatastician/cleave"
 
 [dependencies]
 # None, by design (docs/KERNEL.adoc): std only.
