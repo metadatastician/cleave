@@ -1,3 +1,4 @@
+# This workflow is managed by gh actions-lock.
 # SPDX-License-Identifier: MPL-2.0
 # Cleave Kernel Gate — builds and tests the demonstrable kernel
 # (docs/KERNEL.adoc, KERN-1..7) and typechecks its Idris2 proof mirrors
@@ -43,9 +44,14 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@v7.0.1
       - name: Install stable Rust
-        uses: dtolnay/rust-toolchain@4be9e76fd7c4901c61fb841f559994984270fce7 # stable
+        # The old pin 4be9e76 is reachable from no tag or branch (phantom).
+        # The lockfile resolves @stable to the branch-head SHA; the explicit
+        # toolchain input guards against the ref-carries-toolchain trap.
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
       - name: Build (no deps, forbid(unsafe_code))
         run: cargo build --locked || cargo build
       - name: KERN acceptance suite (debug — drop-bomb armed)
@@ -62,11 +68,11 @@ jobs:
     needs: kernel
     steps:
       - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@v7.0.1
 
       - name: Cache Idris2 toolchain
         id: idris2-cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        uses: actions/cache@v6.1.0
         with:
           path: ~/.idris2
           key: idris2-v0.8.0-chezscheme-${{ runner.os }}
