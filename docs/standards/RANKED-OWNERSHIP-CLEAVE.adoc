@@ -2,7 +2,7 @@
 :doctype: book
 :revnumber: 0.3-draft
 :revdate: 2026-07-09
-:revremark: Groove standard — clean-cleave no-residue discipline; v0.3 folds in the transmute-mode security layer (TS-1..13 → TS section, owner decision 2026-07-09)
+:revremark: Groove standard — clean-cleave no-residue discipline; v0.3 folds in the transmute-mode security layer (TS-1..7 → TS section, owner decision 2026-07-09)
 :keywords: groove, cleave, well-foundedness, ownership, residue, session-types, linear, affine
 :toc: macro
 :toclevels: 3
@@ -19,9 +19,10 @@ on 2026-06-16 when cleave was differentiated out of the gossamer/groove tangle.
 standards#386 tracks adoption; the audit of 2026-06-15 found `standards` had NO
 canonical Groove spec — only a browser-harness template.
 
-NOTE: This is v0.2-draft. v0.1 was drafted in-session by a sibling model. This
-version applies three corrections and adds three invariants, all flagged in the
-changelog below. Provenance + rationale: `2026-06-15-gossamer-cleave-surface-session-handoff.adoc`.
+NOTE: This is v0.3-draft (v0.2 + the TS layer folded in, owner decision
+2026-07-09). v0.1 was drafted in-session by a sibling model; v0.2 applied three
+corrections and added three invariants, all flagged in the changelog below.
+Provenance + rationale: `2026-06-15-gossamer-cleave-surface-session-handoff.adoc`.
 
 toc::[]
 
@@ -285,7 +286,7 @@ the byte encoding — that is a category error.
 | `src/interface/abi/Groove.idr:503` | `handshakeRank` — connect-side ranking function (not teardown).
 | `src/interface/abi/GrooveTermination.idr` | Connect-handshake bounded-length (≤4); NOT the teardown proof.
 | `src/interface/abi/HandleLinearity.idr` | Per-handle exactly-once; the cross-handle ownership rank is complementary.
-| `main.zig:1878 gossamer_groove_disconnect_typed` | *Non-conformant today:* flat wipe, bypasses the `ResourceCleanup` descent ⇒ violates `RC-7`/`RC-8`. First conformance task = wire it.
+| `main.zig gossamer_groove_disconnect_typed` | *Conformant since gossamer#104 (2026-07-09):* the flat wipe was replaced by a children-first postorder descent with per-subtree residue-0 assertion + audit ring; machine-verified green 2026-08-03 (gossamer `E2E + Safety` run 30842887080). Earlier text here recorded the pre-#104 flat wipe.
 | `main.zig:1867 ttl_seconds` | Degenerate untyped `u32` countdown ⇒ erased runtime shadow of the typed occupancy rank (`RC-6`).
 | echo-types `Ordinal/CNF`, `RankPow` | Reuse for ω·n / ω^k ranks (monotone embedding) when `RC-11` permits.
 | tropical-resource-typing `EchoBridge`, `MinPlus` | Reuse: ∞ = infeasible = bottom; residue→0 = grade→identity.

@@ -56,8 +56,11 @@ Per `docs/PROOF-NEEDS.adoc`:
   gossamer verify leg and burble producer-signing leg are not.
 * `G-4` — open: RC-1..13 are vacuously green outside the kernel, because no
   real Hard-owns-Soft owns-graph exists in any consumer yet.
-* `G-2`/`G-3` gossamer legs — merged but *unverified*: their designated CI
-  (gossamer `e2e.yml`) has never parsed. See those rows in PROOF-NEEDS.
+* `G-2`/`G-3` gossamer legs — *CLOSED, machine-verified 2026-08-03*: the
+  designated CI (gossamer `e2e.yml`), repaired in gossamer#137 and unblocked by
+  the #143 FFI fix, ran green on gossamer `main` @ `5da3f63` — `E2E + Safety`
+  run 30842887080, `ABI Typecheck Gate` run 30842887323. See those rows in
+  PROOF-NEEDS for the full trail.
 
 The bar for "demonstrated" is unchanged: real capability, soft *and* hard,
 descent actually invoked, handle actually linear, proof guarding running code.
