@@ -1,5 +1,6 @@
 # This workflow is managed by gh actions-lock.
 # SPDX-License-Identifier: MPL-2.0
+# This workflow is managed by gh actions-lock.
 # Cleave Kernel Gate — builds and tests the demonstrable kernel
 # (docs/KERNEL.adoc, KERN-1..7) and typechecks its Idris2 proof mirrors
 # (cleave-proofs.ipkg). The Idris2 recipe is gossamer's abi-typecheck.yml
@@ -46,10 +47,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7.0.1
       - name: Install stable Rust
-        # The old pin 4be9e76 is reachable from no tag or branch (phantom).
-        # The lockfile resolves @stable to the branch-head SHA; the explicit
-        # toolchain input guards against the ref-carries-toolchain trap.
-        uses: dtolnay/rust-toolchain@stable
+        # Pinned to the v1 TAG, not the `stable` BRANCH. dtolnay force-moves
+        # `stable` on each Rust release, so a lockfile pin to it stops being
+        # reachable from the branch and enforcement rejects the job with
+        # "Lockfile pin ... does not match ref `stable`" (measured on groove,
+        # 2026-08-07). The ref selects the ACTION version only; the toolchain
+        # comes from the explicit input below, which is required anyway
+        # because dtolnay otherwise reads the toolchain from the ref name.
+        uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
       - name: Build (no deps, forbid(unsafe_code))
