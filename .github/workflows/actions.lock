@@ -9,7 +9,7 @@ workflows:
     '.github/workflows/kernel.yml':
         - 'actions/cache@v6.1.0'
         - 'actions/checkout@v7.0.1'
-        - 'dtolnay/rust-toolchain@stable'
+        - 'dtolnay/rust-toolchain@v1'
     '.github/workflows/oikosbot.yml':
         - 'actions/checkout@v7.0.1'
         - 'github/codeql-action@v4.37.4'
@@ -49,9 +49,9 @@ dependencies:
         repo_id: 496012378
         uses:
             - 'actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f'
-    'dtolnay/rust-toolchain@stable':
-        ref: 'stable'
-        commit: 'sha1-4cda84d5c5c54efe2404f9d843567869ab1699d4'
+    'dtolnay/rust-toolchain@v1':
+        ref: 'v1'
+        commit: 'sha1-e97e2d8cc328f1b50210efc529dca0028893a2d9'
         owner_id: 1940490
         repo_id: 260749683
     'github/codeql-action@v4.37.4':
