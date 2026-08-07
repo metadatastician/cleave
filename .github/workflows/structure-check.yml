@@ -1,5 +1,6 @@
 # This workflow is managed by gh actions-lock.
 # SPDX-License-Identifier: MPL-2.0
+# This workflow is managed by gh actions-lock.
 # The one real workflow for a design repo: the docs that ARE the repo exist,
 # the README stays honest, and the prune doesn't regress (ADR 0008 in
 # groove-protocol). Everything else in this directory is scheduled for
