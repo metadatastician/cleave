@@ -140,22 +140,33 @@ narrative: `dev-notes/joinery-session-sitrep-2026-07-29.md` (estate-local).
   kernel-only, or wire-blocked (below).
 
 | `spline`
-| no — 0 of 4 criteria
-| Foundation for criterion (a) merged in burble (Bebop plane, codec tests,
-  codegen gate), but the flag is **default-off**: criterion (a) requires the
-  *default* transport path.
+| no — **3 of 4 criteria** (a)(b)(c) shipped 2026-08-04; (d) open
+| (a) Bebop is the *default* signalling plane in burble (`#180`), on strict
+  truncation-rejecting codecs behind an armed byte-identity drift gate
+  (`#178`) with the cross-plane `LeaveReason` enum aligned (`#179`).
+  (b) gossamer parses the same plane — a pure-Zig strict decoder for all 11
+  variants, interop-tested against burble's *actual* bytes (`gossamer#145`).
+  (c) the alignment mapping has a conformance test in groove CI, with its own
+  falsifiability self-test (`groove#30`). (d) remains open — see below.
 |===
 
 === Why spline is now cleave's critical path
 
 Cleave's remaining heavyweight obligations — `O-6` (joint completion, RC-9),
 `O-7` (clean-XOR-rupture, RC-13 general), `TS-5` (multi-process atomic re-dial)
-and `TS-7` (posture never on the wire, currently *vacuous* because there is no
-wire) — **all require real bytes between two processes**. That wire is spline.
-Advancing spline therefore advances cleave; polishing cleave alone cannot reach
-those obligations. Spline's own promotion bar (ADR 0005) doubles as the trio's
-integration test, and its criterion (d) is the venue where cleave's `G-3`/`TS-7`
-discipline gets demonstrated end-to-end.
+and `TS-7` (posture never on the wire, currently *vacuous*) — **all require real
+bytes between two processes**. That wire is spline. Advancing spline therefore
+advances cleave; polishing cleave alone cannot reach those obligations.
+Spline's own promotion bar (ADR 0005) doubles as the trio's integration test,
+and its criterion (d) is the venue where cleave's `G-3`/`TS-7` discipline gets
+demonstrated end-to-end.
+
+NOTE: As of 2026-08-04 **the wire exists** — criteria (a), (b) and (c) are
+shipped, so `TS-7` is no longer vacuous *for want of a wire*; it is vacuous
+only for want of the capture that criterion (d) supplies. That capture — a
+gossamer↔burble session whose bytes are asserted to carry no posture, rank or
+lifecycle witness — is now the single unblocking step for `O-6`, `O-7`,
+`TS-5` and `TS-7` alike. It is the next piece of work on this axis.
 
 === The discipline this round established
 
