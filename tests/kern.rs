@@ -47,8 +47,14 @@ fn kern_1_rank_strictly_decreases_and_cycles_unrepresentable() {
     let (a_rank, a_parent) = minted[&a.node_id()];
     let (b_rank, b_parent) = minted[&b.node_id()];
     assert_eq!(root_parent, None);
-    assert!(a_rank < root_rank, "child rank must be strictly below parent");
-    assert!(b_rank < a_rank, "grandchild rank must be strictly below child");
+    assert!(
+        a_rank < root_rank,
+        "child rank must be strictly below parent"
+    );
+    assert!(
+        b_rank < a_rank,
+        "grandchild rank must be strictly below child"
+    );
     assert_eq!(a_parent, Some(root.node_id()));
     assert_eq!(b_parent, Some(a.node_id()));
 
@@ -89,7 +95,10 @@ fn kern_1_rank_violation_panics() {
     let b = s.mint(&a, soft(), now).unwrap();
     // rank(a) > rank(b): adopting a under b must panic (RC-1 falsifier).
     let _ = s.adopt(&b, &a);
-    unreachable!("adopt must have panicked; handles {root:?} intentionally not consumed", root = root.node_id());
+    unreachable!(
+        "adopt must have panicked; handles {root:?} intentionally not consumed",
+        root = root.node_id()
+    );
 }
 
 /// KERN-2: a leaked handle (dropped without teardown while its node lives)
@@ -106,7 +115,10 @@ fn kern_2_handle_linear_leak_bombs() {
         drop(leaked); // leak: node still live, handle unconsumed → bomb
         let _ = s.teardown(root);
     });
-    assert!(result.is_err(), "leaking a live handle must bomb in debug builds");
+    assert!(
+        result.is_err(),
+        "leaking a live handle must bomb in debug builds"
+    );
 }
 
 /// KERN-2 non-bomb path: a handle whose node was consumed *by the system*
@@ -120,7 +132,11 @@ fn kern_2_stale_receipt_after_ancestor_teardown_is_safe() {
     let b = s.mint(&a, soft(), now).unwrap();
     let report = s.teardown(a); // collects b's node too, children-first
     assert_eq!(report.residue_in_subtree, 0);
-    assert_eq!(report.released.first(), Some(&b.node_id()), "child released before parent");
+    assert_eq!(
+        report.released.first(),
+        Some(&b.node_id()),
+        "child released before parent"
+    );
     drop(b); // stale receipt: must NOT bomb
     let _ = s.teardown(root);
 }
@@ -138,8 +154,15 @@ fn kern_3_teardown_all_residue_zero() {
     assert_eq!(s.residue(), 5);
 
     let report = s.teardown_all();
-    assert_eq!(report.residue_in_subtree, 0, "⊥ must be the zero-residue state");
-    assert_eq!(report.released.len(), 5, "every owned node discharged exactly once");
+    assert_eq!(
+        report.residue_in_subtree, 0,
+        "⊥ must be the zero-residue state"
+    );
+    assert_eq!(
+        report.released.len(),
+        5,
+        "every owned node discharged exactly once"
+    );
 
     // All receipts are stale now; safe to drop.
     drop((root, a, a1, a2, b));
@@ -199,7 +222,10 @@ fn kern_5_soft_lease_expires_zero_residue() {
     assert!(!expiries.is_empty(), "soft lease past TTL must expire");
     let total_released: usize = expiries.iter().map(|e| e.released).sum();
     assert_eq!(total_released, 2, "expiry wipes the whole owned subtree");
-    assert!(expiries.iter().all(|e| e.residue == 0), "expiry is a zero-residue wipe");
+    assert!(
+        expiries.iter().all(|e| e.residue == 0),
+        "expiry is a zero-residue wipe"
+    );
     assert!(
         s.audit()
             .events()
@@ -228,17 +254,26 @@ fn kern_6_hard_lease_heartbeat_survives_3_ttls_then_degrades() {
     for _ in 0..4 {
         now += TTL - Duration::from_millis(10);
         s.heartbeat(&h, now).unwrap();
-        assert!(s.tick(now).is_empty(), "a lease being renewed must never be reaped");
+        assert!(
+            s.tick(now).is_empty(),
+            "a lease being renewed must never be reaped"
+        );
     }
     assert_eq!(s.residue(), 2, "hard lease survived ≥3 TTL windows");
 
     // Stop heartbeating: within the grace windows it survives...
     let expiries = s.tick(now + TTL + Duration::from_millis(1));
-    assert!(expiries.is_empty(), "hard degrades only after 3 whole missed windows");
+    assert!(
+        expiries.is_empty(),
+        "hard degrades only after 3 whole missed windows"
+    );
     // ...after three whole missed windows it degrades through KERN-5.
     let expiries = s.tick(now + TTL * 3 + Duration::from_millis(1));
     assert_eq!(expiries.len(), 1);
-    assert_eq!(expiries[0].residue, 0, "degradation is the same zero-residue wipe");
+    assert_eq!(
+        expiries[0].residue, 0,
+        "degradation is the same zero-residue wipe"
+    );
 
     let _ = s.teardown(root);
     drop(h);

@@ -55,7 +55,11 @@ impl Surface {
         let mut audit = AuditLog::new();
         let (id, state) = arena.mint_root();
         audit.minted(id, ROOT_RANK, None);
-        let surface = Surface { arena, stage: Stage::S1, audit };
+        let surface = Surface {
+            arena,
+            stage: Stage::S1,
+            audit,
+        };
         (surface, Handle::new(id, state))
     }
 
@@ -63,7 +67,15 @@ impl Surface {
     /// The child's rank is strictly below its parent's (RC-1/RC-2); rank
     /// exhaustion is an error rather than a wrap-around (`⊥` is a floor,
     /// not a modulus). KERN-1.
-    pub fn mint(&mut self, parent: &Handle, lease: Lease, now: Instant) -> Result<Handle, RankError> {
+    pub fn mint(
+        &mut self,
+        parent: &Handle,
+        lease: Lease,
+        now: Instant,
+    ) -> Result<Handle, RankError> {
+        if !self.arena.owns_handle(parent) {
+            return Err(RankError::ForeignSurface);
+        }
         let (id, rank, state) = self.arena.mint_child(parent.id(), self.stage, lease, now)?;
         self.audit.minted(id, rank, Some(parent.id()));
         Ok(Handle::new(id, state))
@@ -77,6 +89,9 @@ impl Surface {
     /// unrepresentable: a cycle needs `rank(a) < rank(b) < rank(a)`.
     /// Recoverable misuse (dead nodes, re-parenting the root) is an `Err`.
     pub fn adopt(&mut self, new_parent: &Handle, child: &Handle) -> Result<(), RankError> {
+        if !self.arena.owns_handle(new_parent) || !self.arena.owns_handle(child) {
+            return Err(RankError::ForeignSurface);
+        }
         self.arena.adopt(new_parent.id(), child.id())
     }
 
@@ -94,14 +109,32 @@ impl Surface {
     /// # let _ = s.teardown_all();
     /// # let _ = root;
     /// ```
+    /// # Panics
+    ///
+    /// Panics before changing this surface if `handle` belongs to another
+    /// surface. Use [`Surface::try_teardown`] to recover a foreign receipt.
     pub fn teardown(&mut self, handle: Handle) -> AuditReport {
+        match self.try_teardown(handle) {
+            Ok(report) => report,
+            Err(_handle) => panic!("handle belongs to a different cleave Surface"),
+        }
+    }
+
+    /// Tear down an owned subtree, or return the original foreign handle.
+    /// Rejection changes neither surface nor the handle's consumption state,
+    /// so the caller can retry with the issuing surface. A receipt already
+    /// collected by this surface is accepted and releases no additional nodes.
+    pub fn try_teardown(&mut self, handle: Handle) -> Result<AuditReport, Handle> {
+        if !self.arena.owns_handle(&handle) {
+            return Err(handle);
+        }
         let id = handle.id();
         let released = self.release_subtree(id);
         handle.disarm();
-        AuditReport {
+        Ok(AuditReport {
             released,
             residue_in_subtree: self.arena.live_in_subtree(id),
-        }
+        })
     }
 
     /// Graceful teardown of everything, consuming the surface. Reaching `⊥`
@@ -115,7 +148,10 @@ impl Surface {
             residue == 0,
             "RC-13 violated: graceful teardown left {residue} live node(s) — residue must be zero at ⊥"
         );
-        AuditReport { released, residue_in_subtree: residue }
+        AuditReport {
+            released,
+            residue_in_subtree: residue,
+        }
     }
 
     /// Advance lease bookkeeping to `now` (RC-6). Soft leases past their
@@ -133,7 +169,11 @@ impl Surface {
             let released = self.release_subtree(id);
             let residue = self.arena.live_in_subtree(id);
             self.audit.expired(id, residue);
-            expiries.push(Expiry { node: id, released: released.len(), residue });
+            expiries.push(Expiry {
+                node: id,
+                released: released.len(),
+                residue,
+            });
         }
         expiries
     }
@@ -142,6 +182,9 @@ impl Surface {
     /// heartbeat; `SoftGroove` MUST be allowed to expire, so refreshing a
     /// soft lease is refused). KERN-6.
     pub fn heartbeat(&mut self, handle: &Handle, now: Instant) -> Result<(), LeaseError> {
+        if !self.arena.owns_handle(handle) {
+            return Err(LeaseError::ForeignSurface);
+        }
         self.arena.refresh_hard(handle.id(), now)
     }
 
@@ -205,4 +248,3 @@ impl Surface {
         plan
     }
 }
-

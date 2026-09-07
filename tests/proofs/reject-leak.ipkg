@@ -1,0 +1,4 @@
+package cleave-proof-control-leak
+sourcedir = "../../proofs"
+depends = base
+modules = Checks.RejectLeak
