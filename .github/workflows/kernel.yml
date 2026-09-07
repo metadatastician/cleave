@@ -4,33 +4,16 @@
 # Cleave Kernel Gate — builds and tests the demonstrable kernel
 # (docs/KERNEL.adoc, KERN-1..7) and typechecks its Idris2 proof mirrors
 # (cleave-proofs.ipkg). The Idris2 recipe is gossamer's abi-typecheck.yml
-# pattern (Chez + pinned Idris2 v0.8.0), path-filtered and cached so it
-# stays off unrelated pushes.
+# pattern (Chez + pinned Idris2 v0.8.0). Always reports on PRs and merge queues.
 name: Cleave Kernel Gate
 
 on:
+  merge_group:
+    types: [checks_requested]
   pull_request:
     branches: ['**']
-    paths:
-      - 'src/**'
-      - 'tests/**'
-      - 'Cargo.toml'
-      - 'Cargo.lock'
-      - 'rust-toolchain.toml'
-      - 'proofs/**'
-      - 'cleave-proofs.ipkg'
-      - '.github/workflows/kernel.yml'
   push:
     branches: [main]
-    paths:
-      - 'src/**'
-      - 'tests/**'
-      - 'Cargo.toml'
-      - 'Cargo.lock'
-      - 'rust-toolchain.toml'
-      - 'proofs/**'
-      - 'cleave-proofs.ipkg'
-      - '.github/workflows/kernel.yml'
 
 permissions:
   actions: read
@@ -87,7 +70,7 @@ jobs:
         uses: actions/cache@v6.1.0
         with:
           path: ~/.idris2
-          key: idris2-v0.8.0-chezscheme-${{ runner.os }}
+          key: idris2-15a3e4e70843f7a34100f6470c04b791330788df-chezscheme-${{ runner.os }}
 
       - name: Install Chez Scheme
         run: sudo apt-get update && sudo apt-get install -y chezscheme
@@ -97,6 +80,7 @@ jobs:
         run: |
           set -euo pipefail
           git clone --depth 1 --branch v0.8.0 https://github.com/idris-lang/Idris2.git "$RUNNER_TEMP/Idris2"
+          test "$(git -C "$RUNNER_TEMP/Idris2" rev-parse HEAD)" = 15a3e4e70843f7a34100f6470c04b791330788df
           cd "$RUNNER_TEMP/Idris2"
           make bootstrap SCHEME=chezscheme
           make install
