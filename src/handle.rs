@@ -39,6 +39,7 @@ impl HandleState {
         self.0.store(COLLECTED, Ordering::Release);
     }
 
+    #[cfg(debug_assertions)]
     fn is_alive(&self) -> bool {
         self.0.load(Ordering::Acquire) == ALIVE
     }
@@ -55,11 +56,20 @@ pub struct Handle {
 
 impl Handle {
     pub(crate) fn new(id: NodeId, state: Arc<HandleState>) -> Handle {
-        Handle { id, state, armed: true }
+        Handle {
+            id,
+            state,
+            armed: true,
+        }
     }
 
     pub(crate) fn id(&self) -> NodeId {
         self.id
+    }
+
+    /// The issuing node's receipt cell is the authority, not its arena index.
+    pub(crate) fn matches_state(&self, state: &Arc<HandleState>) -> bool {
+        Arc::ptr_eq(&self.state, state)
     }
 
     /// The node this handle is a receipt for. An identifier only — it

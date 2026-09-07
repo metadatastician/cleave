@@ -38,6 +38,12 @@ pub enum LeaseError {
     Unleased,
     /// The node is no longer live.
     Dead,
+    /// The handle belongs to another surface.
+    ForeignSurface,
+    /// The lease deadline has passed, even if the expiry tick has not run yet.
+    Expired,
+    /// A heartbeat predates the last accepted refresh.
+    TimeWentBackwards,
 }
 
 /// One expiry event returned by [`Surface::tick`](crate::Surface::tick).
@@ -54,34 +60,40 @@ pub struct Expiry {
 
 pub(crate) struct LeaseState {
     lease: Lease,
-    expires_at: Instant,
+    refreshed_at: Instant,
 }
 
 impl LeaseState {
     pub(crate) fn new(lease: Lease, now: Instant) -> LeaseState {
-        let ttl = match lease {
-            Lease::Soft { ttl } | Lease::Hard { ttl } => ttl,
-        };
-        LeaseState { lease, expires_at: now + ttl }
+        LeaseState {
+            lease,
+            refreshed_at: now,
+        }
     }
 
     /// Is this lease due for reaping at `now`?
     pub(crate) fn due(&self, now: Instant) -> bool {
-        match self.lease {
-            Lease::Soft { .. } => now >= self.expires_at,
-            Lease::Hard { ttl } => {
-                // Degrade only after three whole missed windows: the lease
-                // expired, and two further full TTLs passed unrenewed.
-                now >= self.expires_at + ttl + ttl
-            }
-        }
+        // Compare elapsed durations instead of adding to Instant: even
+        // Duration::MAX is safe, and three TTL windows cannot overflow.
+        let limit = match self.lease {
+            Lease::Soft { ttl } => ttl,
+            Lease::Hard { ttl } => ttl.saturating_mul(3),
+        };
+        now.checked_duration_since(self.refreshed_at)
+            .is_some_and(|elapsed| elapsed >= limit)
     }
 
     pub(crate) fn refresh_hard(&mut self, now: Instant) -> Result<(), LeaseError> {
         match self.lease {
             Lease::Soft { .. } => Err(LeaseError::SoftMustExpire),
-            Lease::Hard { ttl } => {
-                self.expires_at = now + ttl;
+            Lease::Hard { .. } => {
+                if now < self.refreshed_at {
+                    return Err(LeaseError::TimeWentBackwards);
+                }
+                if self.due(now) {
+                    return Err(LeaseError::Expired);
+                }
+                self.refreshed_at = now;
                 Ok(())
             }
         }

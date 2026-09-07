@@ -13,13 +13,20 @@ v0.8.0); idris2 is not assumed on dev machines.
 [cols="1,3"]
 |===
 | `Types.idr` | Inductive mirrors: `RTree` (finite owns-tree), `Ranked`/`RankedForest` — RC-1/RC-2 as a datatype witness (every owning edge rank-decreasing; cycles unrepresentable in a finite rank-decreasing tree, RC-3). Ranks are `Nat` (RC-11: no ordinals for finite trees).
-| `HandleLinearity.idr` | O-5 / G-3 (kernel path): `teardown : (1 h : Handle) -> Perp` — exactly-once consumption enforced by multiplicities; drop and duplicate both fail to typecheck (negative examples kept as comments). Runtime mirror: Rust move semantics + `compile_fail` doctest + debug drop-bomb (KERN-2).
+| `HandleLinearity.idr` | O-5 / G-3 (kernel path): `teardown : (1 h : Handle) -> Perp` — multiplicity of the bound argument is enforced; executable negative fixtures reject duplication and omission. This does not prove native resource cleanup. Runtime mirror: Rust moves + `compile_fail` doctest + debug drop-bomb (KERN-2).
 | `DMMultiset.idr` | The Dershowitz–Manna STEP lemma: `teardownStepDecreasesDM` — releasing a `Ranked` node is a DM step on the rank multiset (children in, parent out, all strictly below; RC-7's strict descent for one step).
-| `ResourceCleanup.idr` | The G-1 upgrade, tree-shaped: postorder `plan` with `planPostorder` + `planParentLast` (children-before-parent, RC-8/O-4), `planComplete` (every node discharged exactly once), `gracefulTeardownTerminates` (named per the spec slogan — NOT `residueAlwaysZero`), `residueZeroAtPerp` (⊥ = zero residue, O-2/RC-7). Runtime mirror: `src/teardown.rs`, KERN-3/KERN-4.
+| `ResourceCleanup.idr` | Tree-shaped postorder: `planPostorder` + `planParentLast`, `planComplete` (length equals tree size, not a unique-identity theorem), `gracefulTeardownTerminates` (finite structural recursion), `residueZeroAtPerp` (the size-minus-length measure is zero, not an OS resource measurement). Runtime mirror: `src/teardown.rs`, KERN-3/KERN-4 and identity/postorder checks in `tests/boundaries.rs`.
 | `Posture.idr` | TS layer (v0.3): `postureOf` total (TS-1), `permsMonotone` (TS-2), `gatingFloor` (TS-3 degenerate), `softPreemptable`/`hardNoticed` (TS-4). Runtime mirror: `src/staircase.rs`, KERN-7.
 |===
 
 == Honesty ledger (do not overclaim)
+
+Local recheck on 2026-09-05: Idris2 0.7.0 and 0.8.0, fresh build directories, all
+five package modules and the valid fixture accepted; duplication and leak
+fixtures rejected for the expected multiplicity error. Reproduce with
+`bash tests/check_proofs.sh /absolute/path/to/evidence`. Set `IDRIS2` to the
+desired compiler executable. CI pins 0.8.0; local passes do not assert a new
+remote CI result.
 
 * **General DM well-foundedness is NOT proven.** The DM order over
   Nat-multisets has order type ω^ω; its accessibility proof is genuinely
