@@ -50,17 +50,32 @@ pub struct AuditLog {
 
 impl AuditLog {
     pub(crate) fn new() -> AuditLog {
-        AuditLog { events: Vec::new(), seq: 0 }
+        AuditLog {
+            events: Vec::new(),
+            seq: 0,
+        }
     }
 
     pub(crate) fn minted(&mut self, node: NodeId, rank: Rank, parent: Option<NodeId>) {
         self.events.push(AuditEvent::Minted { node, rank, parent });
     }
 
-    pub(crate) fn released(&mut self, node: NodeId, rank: Rank, parent: Option<NodeId>, stage: Stage) {
+    pub(crate) fn released(
+        &mut self,
+        node: NodeId,
+        rank: Rank,
+        parent: Option<NodeId>,
+        stage: Stage,
+    ) {
         let seq = self.seq;
         self.seq += 1;
-        self.events.push(AuditEvent::Released { node, rank, parent, stage, seq });
+        self.events.push(AuditEvent::Released {
+            node,
+            rank,
+            parent,
+            stage,
+            seq,
+        });
     }
 
     pub(crate) fn expired(&mut self, node: NodeId, residue: usize) {

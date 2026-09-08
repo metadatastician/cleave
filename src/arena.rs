@@ -9,6 +9,7 @@
 use crate::handle::HandleState;
 use crate::lease::{Lease, LeaseError, LeaseState};
 use crate::staircase::Stage;
+use crate::Handle;
 use std::sync::Arc;
 use std::time::Instant;
 
@@ -38,6 +39,8 @@ pub enum RankError {
     Dead,
     /// The root cannot be re-parented.
     Root,
+    /// The handle was issued by a different surface and carries no authority here.
+    ForeignSurface,
 }
 
 pub(crate) struct Node {
@@ -55,6 +58,14 @@ pub(crate) struct Arena {
 }
 
 impl Arena {
+    /// Check both the index bounds and the unforgeable receipt identity before
+    /// interpreting a handle in this arena. Arc identity survives Surface moves.
+    pub(crate) fn owns_handle(&self, handle: &Handle) -> bool {
+        self.nodes
+            .get(handle.id().0)
+            .is_some_and(|node| handle.matches_state(&node.handle_state))
+    }
+
     pub(crate) fn new() -> Arena {
         Arena { nodes: Vec::new() }
     }

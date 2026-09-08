@@ -16,23 +16,23 @@ actually runs.
 
 == What is machine-verified today
 
-Re-measured 2026-07-28 from a clean checkout:
+Re-measured 2026-09-05 in the isolated beta worktree:
 
 [cols="3,2,3",options="header"]
 |===
 | Artifact | Result | How to reproduce
 
 | Rust acceptance suite (KERN-1..7 + companions)
-| 10/10 pass (debug); release drops the drop-bomb test by design
-| `cargo test --all-targets`
+| 18/18 pass (debug); 17/17 release (the debug-only drop-bomb test is excluded)
+| `cargo test --locked --all-targets`; `cargo test --locked --release`
 
 | Linearity compile-fail doctest
 | 1/1 pass (a second `teardown` does not compile)
-| `cargo test --doc`
+| `cargo test --locked --doc`
 
 | Idris2 proof mirror (`cleave-proofs.ipkg`)
-| 5/5 modules typecheck, exit 0
-| `idris2 --typecheck cleave-proofs.ipkg`
+| 5/5 modules typecheck; positive fixture accepted and two invalid fixtures rejected for their intended errors
+| `bash tests/check_proofs.sh /absolute/path/to/evidence`
 
 | Trust base of the mirror
 | zero `believe_me` / `assert_total` / `postulate`; every module `%default total`

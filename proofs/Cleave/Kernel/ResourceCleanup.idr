@@ -18,8 +18,9 @@
 |||     last (definitional equation, exported as evidence).
 |||   * `planParentLast` — the parent is the LAST entry of its subtree's
 |||     plan segment (order-dual of construction, RC-8/O-4).
-|||   * `planComplete` — every node is discharged exactly once: the plan's
-|||     length equals the subtree's size.
+|||   * `planComplete` — cardinality: the plan's length equals subtree size.
+|||     Ranks are not unique identities; this equality alone is not a
+|||     no-duplicate or runtime resource-discharge theorem.
 |||   * `residueZeroAtPerp` — after executing the whole plan the residue
 |||     measure (size minus steps executed) is zero: ⊥ IS the zero-residue
 |||     state (O-2/RC-7).
@@ -92,8 +93,8 @@ planParentLast : (r : Rank) -> (m : LeaseMode) -> (cs : List RTree)
 planParentLast r m cs = lastOfSnoc (planForest cs) r
 
 mutual
-  ||| Every owned node is discharged exactly once: the plan visits as many
-  ||| steps as the subtree has nodes. (Explicit `trans`/`cong` chains
+  ||| The plan has as many steps as the subtree has nodes. This theorem
+  ||| states cardinality, not identity coverage. (Explicit `trans`/`cong` chains
   ||| rather than `rewrite`, so the equational direction is unambiguous.)
   public export
   planComplete : (t : RTree) -> length (plan t) = size t

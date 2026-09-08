@@ -44,7 +44,10 @@ impl PermSet {
     /// Subset order on permission sets: `Narrow ⊆ Wide` (TS-2's monotone
     /// map for a two-point lattice).
     pub fn subset_of(self, other: PermSet) -> bool {
-        matches!((self, other), (PermSet::Narrow, _) | (PermSet::Wide, PermSet::Wide))
+        matches!(
+            (self, other),
+            (PermSet::Narrow, _) | (PermSet::Wide, PermSet::Wide)
+        )
     }
 }
 
