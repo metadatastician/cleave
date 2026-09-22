@@ -36,6 +36,31 @@ else
   fail=1
 fi
 
+# OpenSSF Best Practices project 8509 belongs to an unrelated repository.
+# Until cleave has a verified registration of its own, the README must not
+# advertise a Best Practices certification. Keep the repository-specific
+# OpenSSF Scorecard badge: it is a separate, valid assessment.
+if grep -q "8509" README.adoc; then
+  echo "FAIL: README references retired OpenSSF Best Practices project 8509"
+  fail=1
+else
+  echo "PASS: README does not reference retired project 8509"
+fi
+
+if grep -Eq 'image:.*bestpractices\.dev/projects/[0-9]+/badge' README.adoc; then
+  echo "FAIL: README advertises an unverified OpenSSF Best Practices badge"
+  fail=1
+else
+  echo "PASS: README does not advertise an unverified Best Practices badge"
+fi
+
+if grep -Fq 'image:https://api.scorecard.dev/projects/github.com/metadatastician/cleave/badge[OpenSSF Scorecard' README.adoc; then
+  echo "PASS: README retains the cleave OpenSSF Scorecard badge"
+else
+  echo "FAIL: README lost the cleave OpenSSF Scorecard badge"
+  fail=1
+fi
+
 manifest_count=$(find . -name '*AI-MANIFEST*' -not -path './.git/*' | wc -l)
 if [ "$manifest_count" -le 1 ]; then
   echo "PASS: at most one AI manifest ($manifest_count)"
