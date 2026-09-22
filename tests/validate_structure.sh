@@ -36,28 +36,24 @@ else
   fail=1
 fi
 
-# OpenSSF Best Practices project 8509 belongs to an unrelated repository.
-# Until cleave has a verified registration of its own, the README must not
-# advertise a Best Practices certification. Keep the repository-specific
-# OpenSSF Scorecard badge: it is a separate, valid assessment.
-if grep -q "8509" README.adoc; then
-  echo "FAIL: README references retired OpenSSF Best Practices project 8509"
+# Do not advertise an OpenSSF Best Practices certification unless this
+# repository has actually registered one.  Checking both the provider URL and
+# the rendered label catches a relabelled link as well as a copied badge URL.
+if grep -Eiq 'bestpractices\.dev|OpenSSF[[:space:]]+Best[[:space:]]+Practices' README.adoc; then
+  echo "FAIL: README advertises an unverified OpenSSF Best Practices certification"
   fail=1
 else
-  echo "PASS: README does not reference retired project 8509"
+  echo "PASS: README does not advertise an OpenSSF Best Practices certification"
 fi
 
-if grep -Eq 'image:.*bestpractices\.dev/projects/[0-9]+/badge' README.adoc; then
-  echo "FAIL: README advertises an unverified OpenSSF Best Practices badge"
-  fail=1
+# Best Practices and Scorecard are different OpenSSF programmes.  Removing the
+# false certification must not also remove or redirect this repository's
+# independently generated Scorecard badge.
+scorecard_badge='image:https://api.scorecard.dev/projects/github.com/metadatastician/cleave/badge[OpenSSF Scorecard,link="https://scorecard.dev/viewer/?uri=github.com/metadatastician/cleave"]'
+if grep -Fqx "$scorecard_badge" README.adoc; then
+  echo "PASS: README retains the repository-scoped OpenSSF Scorecard badge"
 else
-  echo "PASS: README does not advertise an unverified Best Practices badge"
-fi
-
-if grep -Fq 'image:https://api.scorecard.dev/projects/github.com/metadatastician/cleave/badge[OpenSSF Scorecard' README.adoc; then
-  echo "PASS: README retains the cleave OpenSSF Scorecard badge"
-else
-  echo "FAIL: README lost the cleave OpenSSF Scorecard badge"
+  echo "FAIL: README lost or redirected the repository-scoped OpenSSF Scorecard badge"
   fail=1
 fi
 
