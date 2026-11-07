@@ -23,7 +23,8 @@ workflows:
         - 'actions/checkout@v7.0.1'
         - 'actions/deploy-pages@v5.0.1'
         - 'actions/upload-pages-artifact@v5.0.0'
-    '.github/workflows/secret-scanner.yml': []
+    '.github/workflows/secret-scanner.yml':
+        - 'metadatastician/standards@b8f60511e76c9015d86990317162dce653c92fe1'
     '.github/workflows/structure-check.yml':
         - 'actions/checkout@v7.0.1'
     '.github/workflows/workflow-safety.yml':
@@ -76,3 +77,10 @@ dependencies:
         commit: 'sha1-3fdad0c2b027f328e784ecf08caf62bf80a784c1'
         owner_id: 6759885
         repo_id: 1274526902
+    'metadatastician/standards@b8f60511e76c9015d86990317162dce653c92fe1':
+        ref: 'b8f60511e76c9015d86990317162dce653c92fe1'
+        commit: 'sha1-b8f60511e76c9015d86990317162dce653c92fe1'
+        owner_id: 297579217
+        repo_id: 1116521501
+        uses:
+            - 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1'
